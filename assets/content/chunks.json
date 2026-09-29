@@ -1,0 +1,8 @@
+[
+{"id":"cse-bigo","subject":"CSE: Big-O notation","text":"Big-O describes how running time grows with input size n. A single loop is O(n), nested loops are O(n^2), and binary search is O(log n)."},
+{"id":"civil-stress","subject":"Civil: Stress and strain","text":"Stress is force per unit area and strain is change in length per original length. In the elastic range stress equals Young's modulus times strain."},
+{"id":"mech-thermo","subject":"Mechanical: First law of thermodynamics","text":"Energy is conserved: change in internal energy equals heat added minus work done by the system."},
+{"id":"ece-nyquist","subject":"ECE: Sampling theorem","text":"To rebuild a signal without aliasing, sample at more than twice its highest frequency. This is the Nyquist rate."},
+{"id":"agri-rotation","subject":"Agriculture: Crop rotation","text":"Crop rotation keeps soil fertile and breaks pest cycles. Legumes such as gram and pigeon pea fix nitrogen for the next crop."},
+{"id":"civil-services-rights","subject":"Civil services: Fundamental Rights","text":"Fundamental Rights are in Part III of the Constitution, Articles 12 to 35. Article 14 guarantees equality and Article 21 protects life and personal liberty."}
+]

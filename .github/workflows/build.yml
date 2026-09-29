@@ -1,0 +1,51 @@
+name: build
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+defaults:
+  run:
+    shell: bash
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: subosito/flutter-action@v2
+        with: {channel: stable}
+      - run: bash scripts/setup.sh && flutter build apk --release --split-per-abi
+      - uses: actions/upload-artifact@v4
+        with: {name: apk, path: build/app/outputs/flutter-apk/*.apk}
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with: {channel: stable}
+      - run: sudo apt-get update && sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev libasound2-dev libfuse2
+      - run: bash scripts/setup.sh && flutter build linux --release
+      - run: bash packaging/linux/build_deb.sh && bash packaging/linux/build_appimage.sh
+      - uses: actions/upload-artifact@v4
+        with: {name: linux, path: "build/*.deb\nbuild/*.AppImage"}
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with: {channel: stable}
+      - run: bash scripts/setup.sh && flutter build windows --release
+      - run: choco install innosetup -y && iscc packaging/windows/installer.iss
+        shell: cmd
+      - uses: actions/upload-artifact@v4
+        with: {name: windows, path: build/GramVidya-Setup.exe}
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with: {channel: stable}
+      - run: bash scripts/setup.sh && flutter build macos --release && bash packaging/macos/build_dmg.sh
+      - uses: actions/upload-artifact@v4
+        with: {name: macos, path: build/GramVidya.dmg}
