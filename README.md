@@ -1,186 +1,824 @@
-# GramVidya AI
+# 🌾 GramVidya AI
 
-**Offline-first learning for students in low-connectivity rural and tribal regions.**
+### **Learning should not stop when the internet does.**
 
-GramVidya AI is a single Flutter codebase that runs on Android, Windows, macOS and Linux. Once set up, the AI tutor, voice input and content sharing all work without an internet connection.
+> **An offline-first AI learning platform designed for students in rural and low-connectivity communities.**
 
-> **Status: working scaffold, not yet compiled or tested on devices.**
-> Read [Project status](#project-status) before planning a pilot.
+GramVidya AI is a Flutter-based educational platform that brings **AI tutoring, multilingual learning, voice interaction, offline study material, scholarships, progress tracking, and peer-to-peer content sharing** directly to the learner's device.
+
+The core idea is simple:
+
+**Download once. Learn anywhere. Keep learning offline.**
 
 ---
 
-## Why GramVidya?
+## 🎯 The Problem
 
-Many students in rural and tribal areas have unreliable or no internet access, and most AI learning tools assume constant connectivity. GramVidya brings a local AI tutor, study notes, scholarship information and peer-to-peer content sharing to the device itself, so learning does not stop when the network does.
+Millions of students in rural and underserved regions face a fundamental barrier to digital education:
 
-## Features
+### **Internet connectivity cannot be assumed.**
 
-- **Offline AI tutor**: answers questions using a local model (Ollama on desktop, llama.cpp on Android), with retrieval over bundled study notes
-- **Graceful fallback**: if no model is installed, the app answers from the best matching offline note
-- **Voice input and output**: speech-to-text (system recogniser or Whisper) and text-to-speech
-- **Scholarships**: a browsable scholarship section (sample data for now)
-- **Peer-to-peer sharing**: share course packs and model files between nearby devices over a local network, with no internet needed
-- **Multilingual UI**: 6 UI languages with a black theme
-- **Local progress tracking**: progress events are stored on-device with Hive
+Most modern EdTech and AI learning platforms depend on:
 
-## Project status
+* Continuous internet connectivity
+* Cloud-hosted AI models
+* Online educational content
+* Expensive or high-bandwidth video
+* Centralized servers
+* English-first interfaces
 
-| Area | State |
-| --- | --- |
-| UI (Home, Ask, Scholarships, Share), black theme, 6 UI languages | Written |
-| Local AI on desktop through Ollama (streaming) | Written, needs a device test |
-| Local AI on Android through llama.cpp | **Stub.** Dart side and channel contract are done. `native/android/LlamaPlugin.kt` still needs the llama.cpp JNI binding |
-| Fallback when no model exists | Works: answers from the best offline note |
-| RAG | Keyword search (BM25) over bundled notes. Not embeddings, so a Hindi question will not find English notes |
-| Voice input | Android and macOS use the system recogniser. Windows and Linux record audio and call the `whisper.cpp` CLI |
-| Voice output | `flutter_tts`, which needs an offline voice for the language. It does not support Linux |
-| Scholarships | **Sample data.** Verify every cap and rule on [scholarships.gov.in](https://scholarships.gov.in) before use |
-| Peer-to-peer sharing | Written: UDP discovery and HTTP transfer on a shared network |
-| Video modules, career decision tree, mentoring, sync upload | Not built yet. Progress events are queued locally only |
-| Gondi and Santali | No UI strings yet. Add reviewed translations in `lib/core/i18n.dart`. Local models are weak in these languages, so test before promising them |
+For a student with an unreliable connection, limited data, or no connectivity at all, even the best AI tutor becomes useless the moment the network disappears.
 
-## Tech stack
+### We asked:
 
-- **Framework:** Flutter (Dart), one codebase for Android, Windows, macOS and Linux
-- **Local LLM:** Ollama (desktop), llama.cpp via a native Android plugin (Kotlin)
-- **Retrieval:** BM25 keyword search over bundled content
-- **Speech:** system speech recogniser, `whisper.cpp`, `flutter_tts`
-- **Storage:** Hive
-- **Sharing:** UDP discovery and HTTP file transfer
-- **CI/CD:** GitHub Actions
+> **What if an AI tutor could travel with the student instead of requiring the student to travel to the internet?**
 
-## Project layout
+That question led to **GramVidya**.
 
+---
+
+# 💡 Our Solution
+
+GramVidya is designed around an **offline-first architecture**.
+
+Instead of making the internet a requirement, the internet is used primarily for **initial acquisition and synchronization**.
+
+```text
+                ONLINE
+                   │
+        ┌──────────▼──────────┐
+        │ Download AI Model   │
+        │ Download Courses    │
+        │ Download Resources  │
+        │ Update Content      │
+        └──────────┬──────────┘
+                   │
+                   ▼
+             DEVICE STORAGE
+                   │
+        ┌──────────▼──────────┐
+        │     GramVidya       │
+        │                     │
+        │  🤖 Local AI Tutor  │
+        │  📚 Offline Courses │
+        │  🎙️ Voice Learning │
+        │  🎓 Scholarships    │
+        │  📈 Progress        │
+        │  📡 P2P Sharing    │
+        └──────────┬──────────┘
+                   │
+                   ▼
+              OFFLINE USE
 ```
-lib/main.dart                     app shell and black theme
-lib/core/i18n.dart                language list and UI strings
-lib/ai/inference_controller.dart  backends: Ollama, native llama.cpp, fallback
-lib/ai/rag.dart                   offline BM25 retrieval, content pack import
-lib/voice/voice_service.dart      speech-to-text (system or Whisper) and text-to-speech
-lib/p2p/share_service.dart        discovery and file transfer
-lib/data/                         Hive progress store and scholarship data
-lib/screens/                      home, chat, scholarships, share
-assets/content/chunks.json        bundled study notes
-native/android/LlamaPlugin.kt     Android llama.cpp bridge skeleton
-packaging/                        .exe, .dmg, .deb, .AppImage scripts
-scripts/setup.sh                  creates platform folders and adds permissions
-.github/workflows/build.yml       builds all four platforms
+
+A student can download the required model and educational resources while connected and continue learning when connectivity disappears.
+
+---
+
+# 🚀 Key Features
+
+## 🤖 1. Offline AI Tutor
+
+GramVidya is being built to run a **local language model directly on the device**.
+
+The application supports an architecture based around:
+
+* GGUF models
+* `llamadart`
+* llama.cpp
+* Local inference
+* Streaming generation
+* Optional Retrieval-Augmented Generation (RAG)
+
+### Designed workflow
+
+```text
+Student asks a question
+        ↓
+Ask Tab
+        ↓
+Local AI Engine
+        ↓
+Downloaded GGUF Model
+        ↓
+Local inference
+        ↓
+Generated explanation
+        ↓
+Student
 ```
 
-## Getting started
+No cloud request is required once the required model and content are available locally.
 
-### 1. Prerequisites
+### Model philosophy
 
-Install Flutter (stable) and the toolchain for your platform:
+The application does **not force every user to install a large AI model inside the initial application package**.
 
-- **Android:** Android Studio
-- **Windows:** Visual Studio with the C++ desktop workload
-- **macOS:** Xcode
-- **Linux:** `clang cmake ninja-build pkg-config libgtk-3-dev libasound2-dev`
+Instead:
 
-### 2. Set up and run
+```text
+Small App
+   +
+Optional AI Model Download
+   =
+Offline AI
+```
 
-From the project folder:
+This reduces the initial installation size and allows users to decide whether they want the local AI capability.
+
+---
+
+# 📚 2. Offline Learning Content
+
+Students can access educational material even without an active internet connection.
+
+Content can include:
+
+* Subject notes
+* Chapters
+* Course material
+* Study packs
+* Downloaded resources
+* Locally stored educational content
+
+The application maintains local content and learning state so that connectivity is not required for basic learning.
+
+---
+
+# 🧠 3. Retrieval-Augmented Learning
+
+GramVidya separates:
+
+### **Knowledge retrieval**
+
+from
+
+### **AI generation**
+
+Educational content can be retrieved from the local knowledge base and supplied as context to the AI tutor.
+
+```text
+Student Question
+       ↓
+Local Retrieval
+       ↓
+Relevant Educational Content
+       ↓
+AI Model
+       ↓
+Context-aware Explanation
+```
+
+This architecture is intended to reduce irrelevant answers and make explanations more grounded in educational material.
+
+---
+
+# 🌐 4. Multilingual Learning
+
+Education should not be restricted by language.
+
+GramVidya includes a multilingual interface and is designed to support learning in Indian languages.
+
+The architecture allows:
+
+* Localized UI
+* Language switching
+* Regional educational content
+* AI responses in the learner's preferred language
+* Voice interaction
+
+The project is designed so that additional reviewed translations and language resources can be added over time.
+
+---
+
+# 🎙️ 5. Voice-Based Learning
+
+For learners who may find typing difficult or prefer conversational learning, GramVidya includes voice capabilities.
+
+### Voice pipeline
+
+```text
+Student speaks
+      ↓
+Speech-to-Text
+      ↓
+AI / Educational Engine
+      ↓
+Generated explanation
+      ↓
+Text-to-Speech
+      ↓
+Student listens
+```
+
+The project uses platform speech capabilities and offline speech tooling such as Whisper-based components where appropriate.
+
+---
+
+# 🎓 6. Scholarship Discovery
+
+GramVidya includes a scholarship section intended to make educational opportunities easier to discover.
+
+The goal is to provide students with:
+
+* Scholarship information
+* Eligibility information
+* Application-related guidance
+* Educational opportunities
+
+> Scholarship eligibility, deadlines and funding information should always be verified against the official source before application.
+
+---
+
+# 📈 7. Personalized Learning & Progress
+
+Learning progress is stored locally.
+
+GramVidya can track:
+
+* Courses
+* Chapters
+* Recent learning activity
+* Progress
+* Weak topics
+* Learning history
+
+This enables the platform to evolve from a simple chatbot into a **personal learning companion**.
+
+---
+
+# 📡 8. Peer-to-Peer Learning
+
+One of GramVidya's key ideas is that **one connected device can help other nearby devices become connected to knowledge**.
+
+Devices on the same local network can exchange:
+
+* Educational content packs
+* Study resources
+* AI model files
+
+### Example
+
+```text
+             Student A
+          ┌─────────────┐
+          │ Has internet│
+          │ + AI model  │
+          └──────┬──────┘
+                 │
+          Local Wi-Fi / Hotspot
+                 │
+       ┌─────────┴─────────┐
+       ▼                   ▼
+ Student B             Student C
+ Offline               Offline
+```
+
+This creates a foundation for **community-powered offline education**.
+
+---
+
+# 🏗️ System Architecture
+
+```text
+┌─────────────────────────────────────────────────────┐
+│                    GRAMVIDYA AI                     │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│  Flutter Application                                │
+│                                                     │
+│  ┌─────────┐ ┌────────┐ ┌────────────┐ ┌────────┐ │
+│  │  Home   │ │  Ask   │ │  Learning  │ │ Mentor │ │
+│  └─────────┘ └───┬────┘ └────────────┘ └────────┘ │
+│                  │                                  │
+│           ┌──────▼──────┐                           │
+│           │ AI Engine   │                           │
+│           └──────┬──────┘                           │
+│                  │                                  │
+│        ┌─────────┴─────────┐                        │
+│        ▼                   ▼                        │
+│  Local LLM             RAG Engine                   │
+│  GGUF / llama.cpp      Local Content                │
+│        │                   │                        │
+│        └─────────┬─────────┘                        │
+│                  ▼                                  │
+│          Contextual Answer                         │
+│                                                     │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│ Voice │ Content │ Progress │ Scholarships │ P2P    │
+│                                                     │
+└─────────────────────────────────────────────────────┘
+```
+
+---
+
+# 🧰 Technology Stack
+
+| Layer          | Technology                                    |
+| -------------- | --------------------------------------------- |
+| Application    | **Flutter / Dart**                            |
+| AI Runtime     | **llamadart / llama.cpp**                     |
+| Model Format   | **GGUF**                                      |
+| Desktop AI     | Local model backend / Ollama integration      |
+| Retrieval      | Local keyword/BM25 retrieval                  |
+| Storage        | Hive / local device storage                   |
+| Speech-to-Text | System speech APIs / Whisper                  |
+| Text-to-Speech | `flutter_tts`                                 |
+| Networking     | Local network / UDP discovery / HTTP transfer |
+| Android Native | Kotlin                                        |
+| CI/CD          | GitHub Actions                                |
+| Packaging      | Android APK, Windows, macOS, Linux            |
+
+---
+
+# 🗂️ Project Structure
+
+```text
+GramVidhya/
+│
+├── lib/
+│   ├── ai/
+│   │   ├── inference_controller.dart
+│   │   └── rag.dart
+│   │
+│   ├── core/
+│   │   └── i18n.dart
+│   │
+│   ├── data/
+│   │
+│   ├── screens/
+│   │
+│   ├── voice/
+│   │   └── voice_service.dart
+│   │
+│   └── p2p/
+│       └── share_service.dart
+│
+├── assets/
+│   └── content/
+│       └── chunks.json
+│
+├── native/
+│   └── android/
+│       └── LlamaPlugin.kt
+│
+├── android/
+│
+├── test/
+│
+├── packaging/
+│
+├── scripts/
+│
+└── .github/
+    └── workflows/
+```
+
+---
+
+# 🔥 What Makes GramVidya Different?
+
+Most EdTech platforms follow:
+
+```text
+Student
+   ↓
+Internet
+   ↓
+Cloud Server
+   ↓
+AI Model
+   ↓
+Answer
+```
+
+GramVidya is designed around:
+
+```text
+Student
+   ↓
+Device
+   ↓
+Local AI + Local Knowledge
+   ↓
+Answer
+```
+
+### The internet becomes an accelerator, not a dependency.
+
+That distinction matters in environments where:
+
+* Connectivity is unreliable
+* Mobile data is expensive
+* Bandwidth is limited
+* Cloud access is unavailable
+* Infrastructure is inconsistent
+
+---
+
+# 🧩 Offline-First Design Principles
+
+GramVidya follows five core principles:
+
+### 1. Local First
+
+Prefer local data and computation whenever possible.
+
+### 2. Download Once
+
+Acquire models and content while connected.
+
+### 3. Learn Anywhere
+
+Continue learning without internet connectivity.
+
+### 4. Share Locally
+
+Allow nearby devices to exchange educational resources.
+
+### 5. Sync When Possible
+
+When connectivity returns, the platform can synchronize or refresh resources.
+
+---
+
+# 📱 User Journey
+
+### First-time user
+
+```text
+Install GramVidya
+       ↓
+Choose language
+       ↓
+Explore courses
+       ↓
+Download AI model (optional)
+       ↓
+Download educational content
+       ↓
+AI becomes available offline
+```
+
+### Offline user
+
+```text
+Open GramVidya
+       ↓
+Ask a question
+       ↓
+Local AI
+       ↓
+Get explanation
+       ↓
+Continue learning
+```
+
+### Community sharing
+
+```text
+Device A
+   │
+   │ Local network
+   ▼
+Device B
+   │
+   ▼
+Educational content / AI model
+```
+
+---
+
+# 🌾 Real-World Use Case
+
+Imagine a student in a village preparing for an examination.
+
+The student has:
+
+* An Android phone
+* Intermittent internet
+* Limited mobile data
+* No reliable access to a private AI tutor
+
+While connected to the internet, the student downloads:
+
+```text
+GramVidya
++
+AI model
++
+Course content
+```
+
+Later, when the internet disappears:
+
+> **Learning continues.**
+
+The student can:
+
+* Ask questions
+* Read chapters
+* Review previous topics
+* Track progress
+* Use supported voice features
+* Access downloaded resources
+* Exchange educational files with nearby users
+
+---
+
+# 🏆 Hackathon Innovation
+
+GramVidya is not simply another educational chatbot.
+
+The project combines:
+
+### 🤖 On-device AI
+
+Local language-model inference.
+
+### 📚 Offline education
+
+Educational material stored locally.
+
+### 🧠 Context-aware tutoring
+
+Retrieval + local generation.
+
+### 🎙️ Voice interaction
+
+Speech-based learning.
+
+### 🌐 Multilingual access
+
+Designed around Indian-language accessibility.
+
+### 📡 Community distribution
+
+Peer-to-peer exchange of models and educational resources.
+
+### 📱 Low-connectivity design
+
+The system is designed around unreliable connectivity rather than treating it as an edge case.
+
+---
+
+# 🔐 Privacy
+
+Local-first AI also provides a privacy advantage.
+
+When inference occurs locally:
+
+```text
+Student Question
+      ↓
+   Device
+      ↓
+ Local Model
+      ↓
+   Answer
+```
+
+The question does not inherently need to leave the device for AI inference.
+
+This architecture can reduce dependence on centralized processing for supported offline workflows.
+
+---
+
+# 📊 Impact
+
+GramVidya aims to address three connected problems:
+
+| Challenge                     | GramVidya Approach           |
+| ----------------------------- | ---------------------------- |
+| Poor connectivity             | Offline-first learning       |
+| Limited access to AI          | On-device AI                 |
+| Language barriers             | Multilingual interface       |
+| Limited educational resources | Downloadable content         |
+| Expensive cloud inference     | Local inference              |
+| Resource distribution         | Peer-to-peer sharing         |
+| Lack of personalized help     | AI tutor + progress tracking |
+
+---
+
+# 🛣️ Roadmap
+
+### Phase 1 — Core Platform
+
+* [x] Flutter application architecture
+* [x] Offline content system
+* [x] Local progress tracking
+* [x] Multilingual UI foundation
+* [x] AI inference architecture
+* [x] Content retrieval
+* [x] Peer-to-peer sharing foundation
+
+### Phase 2 — On-Device Intelligence
+
+* [x] GGUF model support architecture
+* [x] `llamadart` integration
+* [ ] Complete production Android inference path
+* [ ] Robust model lifecycle management
+* [ ] Streaming local inference
+* [ ] Multilingual retrieval
+
+### Phase 3 — Personalized Education
+
+* [ ] Adaptive learning paths
+* [ ] Weak-topic detection
+* [ ] AI-generated practice questions
+* [ ] Personalized revision plans
+* [ ] Improved digital mentoring
+
+### Phase 4 — Community Learning
+
+* [ ] Low-bandwidth synchronization
+* [ ] Community course packs
+* [ ] Distributed content sharing
+* [ ] Regional-language educational datasets
+* [ ] Support for more underserved languages
+
+---
+
+# 🧪 Current Development Status
+
+GramVidya is an active hackathon prototype.
+
+The major application architecture, Flutter UI, offline content infrastructure, local storage, multilingual foundation, sharing infrastructure and AI integration are under active development.
+
+### Current focus
+
+> **Making the downloaded local GGUF model reliably load and generate responses inside the Ask experience.**
+
+The project uses `llamadart 0.9.0` and a native local-inference architecture. Runtime initialization has been validated during development; full end-to-end model inference and device validation remain part of the current integration work.
+
+This distinction is intentional: **we would rather document what is actually verified than claim a feature that has not been tested.**
+
+---
+
+# 🚀 Getting Started
+
+## Requirements
+
+* Flutter stable
+* Dart
+* Android Studio for Android development
+* Visual Studio with C++ workload for Windows
+* Xcode for macOS
+* Linux desktop dependencies where applicable
+
+## Clone
 
 ```bash
-bash scripts/setup.sh      # generates android/windows/macos/linux, adds permissions
-flutter run -d windows     # or macos, linux, or an Android device id
+git clone https://github.com/DarpinderSingh/GramVidhya.git
+cd GramVidhya
 ```
 
-On Windows, run the setup script in Git Bash.
-
-## Install the AI model
-
-Do this once while online, then the app works offline.
-
-### Desktop (Ollama)
+## Install dependencies
 
 ```bash
-# install Ollama from ollama.com, then, while online:
-ollama pull llama3.2:3b        # about 2 GB. Use llama3.2:1b (about 1 GB) on weak laptops
-export GRAMVIDYA_OLLAMA_MODEL=llama3.2:3b   # optional, this is the default
+flutter pub get
 ```
 
-Keep Ollama running. Open the app and tap refresh on Home; it should show `Ollama · llama3.2:3b`.
-
-To move a model to an offline machine, copy the Ollama `models` folder (`~/.ollama/models`, or `%USERPROFILE%\.ollama\models` on Windows).
-
-### Voice on Windows and Linux (Whisper)
+## Run
 
 ```bash
-git clone https://github.com/ggml-org/whisper.cpp && cd whisper.cpp
-cmake -B build && cmake --build build -j --config Release
-sh models/download-ggml-model.sh base      # about 150 MB
-export GRAMVIDYA_WHISPER_BIN=/path/to/build/bin/whisper-cli
-export GRAMVIDYA_WHISPER_MODEL=/path/to/models/ggml-base.bin
+flutter run
 ```
 
-On Android and macOS, install the offline speech pack for your language in system settings instead.
-
-### Android (llama.cpp)
-
-This part is still a stub. To finish it:
-
-1. Build the JNI library from llama.cpp's `examples/llama.android`.
-2. Implement `LlamaJni.load` and `LlamaJni.generate` in `LlamaPlugin.kt`.
-3. Copy the file into `android/app/src/main/kotlin/org/gramvidya/gramvidya/`.
-4. Call `LlamaPlugin.register(flutterEngine, "<app files dir>/model.gguf")` from `MainActivity.configureFlutterEngine`.
-
-Use a Q4 GGUF of a 1B to 3B model.
-
-## Adding study content
-
-Add entries to `assets/content/chunks.json` and rebuild:
-
-```json
-{ "id": "...", "subject": "...", "text": "..." }
-```
-
-Alternatively, put a `.json` file in the same format into the app's share folder on another device and send it with the Share tab. Received packs are indexed immediately.
-
-## Sharing content and models between devices
-
-1. Put both devices on the same network: one phone's hotspot, a Wi-Fi Direct group joined in system settings, or a local router with no internet.
-2. **Device A:** open the Share tab and tap **Share my files**. It serves the `share` folder shown on screen. Copy course packs or `.gguf` model files there.
-3. **Device B:** tap **Find nearby**, choose the device, and download a file.
-
-> **Security note:** anyone on the same network can fetch shared files. Use this only on networks you trust. Android needs the permissions added by `setup.sh`.
-
-## Build and package
+For Windows:
 
 ```bash
-flutter build apk --release --split-per-abi              # build/app/outputs/flutter-apk/*.apk
-flutter build windows --release                          # then: iscc packaging\windows\installer.iss -> build\GramVidya-Setup.exe
-flutter build macos --release && bash packaging/macos/build_dmg.sh     # build/GramVidya.dmg
-flutter build linux --release && bash packaging/linux/build_deb.sh && bash packaging/linux/build_appimage.sh
+flutter run -d windows
 ```
 
-`.github/workflows/build.yml` builds all four platforms on GitHub Actions (use **Run workflow**, or push a `v*` tag).
+For Android:
 
-Notes:
+```bash
+flutter devices
+flutter run -d <device-id>
+```
 
-- The Windows installer requires Inno Setup (`choco install innosetup`).
-- Release signing is **not configured**. Before public distribution, add an Android keystore in `android/app/build.gradle`, and set up code signing and notarisation for macOS and Windows.
+---
 
-## Roadmap
+# 📦 Build Android APK
 
-- [ ] Compile and fix on all four platforms, then test on a low-end Android phone
-- [ ] Finish the llama.cpp Android binding
-- [ ] Replace BM25 with multilingual embeddings so questions in any language find the notes
-- [ ] Add compressed video modules, the career decision tree and mentor booking
-- [ ] Add optional low-bandwidth sync for the progress queue
+```bash
+flutter build apk --release
+```
 
-## Contributing
+For split APKs:
 
-Contributions are welcome, especially:
+```bash
+flutter build apk --release --split-per-abi
+```
 
-- Reviewed translations (including Gondi and Santali) in `lib/core/i18n.dart`
-- Verified scholarship data
-- Study content packs
-- Testing on low-end devices
+Output:
 
-Please open an issue to discuss larger changes before submitting a pull request.
+```text
+build/app/outputs/flutter-apk/
+```
 
-## License
+---
 
-No license has been added yet. Add a `LICENSE` file before accepting outside contributions or distributing builds.
+# 🧪 Testing
+
+Run the complete test suite:
+
+```bash
+flutter test
+```
+
+Run a specific test:
+
+```bash
+flutter test test/llamadart_inspect_test.dart
+```
+
+Analyze the project:
+
+```bash
+flutter analyze
+```
+
+---
+
+# 🖥️ Platform Support
+
+| Platform | Goal                  |
+| -------- | --------------------- |
+| Android  | ⭐ Primary target      |
+| Windows  | Development / desktop |
+| Linux    | Development / desktop |
+| macOS    | Development / desktop |
+
+The architecture intentionally uses Flutter so that the same core educational experience can be extended across platforms.
+
+---
+
+# 🌍 Vision
+
+GramVidya is built around one principle:
+
+> ### **A student's access to education should not depend on the availability of a signal tower.**
+
+AI has made personalized education technically possible.
+
+The challenge is making that intelligence **accessible where connectivity is not guaranteed**.
+
+GramVidya attempts to move AI tutoring from:
+
+**the cloud → to the community → to the device.**
+
+---
+
+# 👥 Team
+
+**GramVidya AI**
+
+Built as a student-led innovation project focused on:
+
+* Artificial Intelligence
+* On-device Machine Learning
+* Flutter
+* Educational Technology
+* Offline-first systems
+* Rural accessibility
+
+---
+
+# 🔗 Project
+
+**GitHub:**
+https://github.com/DarpinderSingh/GramVidhya
+
+---
+
+# ⭐ Support the Project
+
+If you find the idea useful:
+
+* ⭐ Star the repository
+* 🐛 Report issues
+* 💡 Suggest features
+* 📚 Contribute educational content
+* 🌐 Contribute reviewed translations
+* 📱 Test on low-end Android devices
+
+---
+
+## 📜 License
+
+See the repository for the current licensing status.
+
+---
+
+<div align="center">
+
+### 🌾 GramVidya AI
+
+**Learn anywhere. Learn offline. Learn without limits.**
+
+**Built for learners where connectivity cannot be taken for granted.**
+
+</div>
