@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'ai/inference_controller.dart';
 import 'core/i18n.dart';
+import 'core/theme.dart';
 import 'data/auth_service.dart';
 import 'data/store.dart';
 import 'data/translation_service.dart';
@@ -64,50 +66,128 @@ class GramVidyaApp extends StatelessWidget {
       );
 
   ThemeData _buildTheme(Brightness brightness) {
-    if (brightness == Brightness.light) {
-      return ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.light,
-        scaffoldBackgroundColor: const Color(0xFFFAF7F0), // Warm beige
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFFFAF7F0),
-          elevation: 0,
-          foregroundColor: Color(0xFF1C1917),
-        ),
-        cardTheme: const CardThemeData(
-          color: Color(0xFFFFFDF8),
-          surfaceTintColor: Colors.transparent,
-        ),
-        colorScheme: const ColorScheme.light(
-          primary: Color(0xFF2563EB), // Restrained blue accent
-          secondary: Color(0xFF3B82F6),
-          surface: Color(0xFFFFFDF8),
-        ),
-        navigationBarTheme: NavigationBarThemeData(
-          backgroundColor: const Color(0xFFFFFDF8),
-          indicatorColor: const Color(0xFF2563EB).withValues(alpha: 0.15),
-        ),
-      );
-    }
-    return ThemeData.dark(useMaterial3: true).copyWith(
-      scaffoldBackgroundColor: const Color(0xFF0F172A), // Deep navy
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFF0F172A),
+    final tok = brightness == Brightness.light ? AppThemeTokens.light : AppThemeTokens.dark;
+    final isLight = brightness == Brightness.light;
+
+    return ThemeData(
+      useMaterial3: true,
+      brightness: brightness,
+      scaffoldBackgroundColor: tok.backgroundPrimary,
+      appBarTheme: AppBarTheme(
+        backgroundColor: tok.backgroundPrimary,
         elevation: 0,
-        foregroundColor: Color(0xFFF8FAFC),
+        foregroundColor: tok.textPrimary,
+        iconTheme: IconThemeData(color: tok.textPrimary),
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: isLight ? Brightness.dark : Brightness.light,
+        ),
       ),
-      cardTheme: const CardThemeData(
-        color: Color(0xFF1E293B),
+      cardTheme: CardThemeData(
+        color: tok.cardBackground,
         surfaceTintColor: Colors.transparent,
+        elevation: 1,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: tok.border),
+        ),
       ),
-      colorScheme: const ColorScheme.dark(
-        primary: Color(0xFF3B82F6), // Restrained blue accent
-        secondary: Color(0xFF6366F1),
-        surface: Color(0xFF1E293B),
+      colorScheme: ColorScheme(
+        brightness: brightness,
+        primary: tok.primary,
+        onPrimary: isLight ? Colors.white : tok.textPrimary,
+        secondary: tok.secondaryAccent,
+        onSecondary: isLight ? Colors.white : tok.textPrimary,
+        error: tok.error,
+        onError: Colors.white,
+        surface: tok.surface,
+        onSurface: tok.textPrimary,
+        outline: tok.border,
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: const Color(0xFF1E293B),
-        indicatorColor: const Color(0xFF3B82F6).withValues(alpha: 0.2),
+        backgroundColor: tok.navSurface,
+        indicatorColor: tok.navIndicator,
+        surfaceTintColor: Colors.transparent,
+        elevation: 2,
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return IconThemeData(color: tok.primary);
+          }
+          return IconThemeData(color: tok.textSecondary);
+        }),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: tok.primary);
+          }
+          return TextStyle(fontSize: 12, color: tok.textSecondary);
+        }),
+      ),
+      dividerColor: tok.border,
+      dialogTheme: DialogThemeData(
+        backgroundColor: tok.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: tok.border),
+        ),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: tok.surface,
+        modalBackgroundColor: tok.surface,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: isLight ? tok.textPrimary : tok.surfaceElevated,
+        contentTextStyle: TextStyle(color: isLight ? tok.backgroundPrimary : tok.textPrimary),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: tok.surface,
+        hintStyle: TextStyle(color: tok.textSecondary),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: tok.border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: tok.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: tok.primary, width: 2),
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: tok.buttonPrimary,
+          foregroundColor: tok.buttonText,
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: tok.primary,
+          side: BorderSide(color: tok.border),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: tok.primary,
+        ),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: tok.chipBackground,
+        selectedColor: tok.primary.withValues(alpha: 0.18),
+        side: BorderSide(color: tok.border),
+        labelStyle: TextStyle(color: tok.textPrimary, fontSize: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }
@@ -124,28 +204,38 @@ class Shell extends StatefulWidget {
 class _ShellState extends State<Shell> {
   int i = 0;
   @override
-  Widget build(BuildContext context) => Scaffold(
-        body: SafeArea(
-          child: IndexedStack(index: i, children: [
-            HomeScreen(ai: widget.ai, auth: widget.auth),
-            const CurriculumScreen(),
-            ChatScreen(ai: widget.ai),
-            const ScholarshipScreen(),
-            MentorScreen(ai: widget.ai),
-            ShareScreen(ai: widget.ai),
-          ]),
-        ),
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: i,
-          onDestinationSelected: (v) => setState(() => i = v),
-          destinations: [
-            NavigationDestination(icon: const Icon(Icons.home_outlined), selectedIcon: const Icon(Icons.home), label: tr('nav_home')),
-            NavigationDestination(icon: const Icon(Icons.menu_book_outlined), selectedIcon: const Icon(Icons.menu_book), label: tr('nav_learn')),
-            NavigationDestination(icon: const Icon(Icons.chat_bubble_outline), selectedIcon: const Icon(Icons.chat_bubble), label: tr('nav_ask')),
-            NavigationDestination(icon: const Icon(Icons.school_outlined), selectedIcon: const Icon(Icons.school), label: tr('nav_schol')),
-            NavigationDestination(icon: const Icon(Icons.person_outline), selectedIcon: const Icon(Icons.person), label: tr('nav_mentor')),
-            NavigationDestination(icon: const Icon(Icons.share_outlined), selectedIcon: const Icon(Icons.share), label: tr('nav_share')),
-          ],
+  Widget build(BuildContext context) => PopScope(
+        canPop: i == 0,
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) return;
+          if (i != 0) {
+            setState(() => i = 0);
+          }
+        },
+        child: Scaffold(
+          body: SafeArea(
+            child: IndexedStack(index: i, children: [
+              HomeScreen(ai: widget.ai, auth: widget.auth),
+              const CurriculumScreen(),
+              ChatScreen(ai: widget.ai),
+              const ScholarshipScreen(),
+              MentorScreen(ai: widget.ai),
+              ShareScreen(ai: widget.ai),
+            ]),
+          ),
+          bottomNavigationBar: NavigationBar(
+            selectedIndex: i,
+            onDestinationSelected: (v) => setState(() => i = v),
+            labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+            destinations: [
+              NavigationDestination(icon: const Icon(Icons.home_outlined), selectedIcon: const Icon(Icons.home), label: tr('nav_home')),
+              NavigationDestination(icon: const Icon(Icons.menu_book_outlined), selectedIcon: const Icon(Icons.menu_book), label: tr('nav_learn')),
+              NavigationDestination(icon: const Icon(Icons.chat_bubble_outline), selectedIcon: const Icon(Icons.chat_bubble), label: tr('nav_ask')),
+              NavigationDestination(icon: const Icon(Icons.school_outlined), selectedIcon: const Icon(Icons.school), label: tr('nav_schol')),
+              NavigationDestination(icon: const Icon(Icons.person_outline), selectedIcon: const Icon(Icons.person), label: tr('nav_mentor')),
+              NavigationDestination(icon: const Icon(Icons.share_outlined), selectedIcon: const Icon(Icons.share), label: tr('nav_share')),
+            ],
+          ),
         ),
       );
 }

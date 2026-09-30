@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../core/theme.dart';
 
 /// Supported structured mentor actions.
 enum MentorActionType {
@@ -131,10 +132,14 @@ class MentorAction {
     }
 
     // Default execution feedback
+    final tok = context.tokens;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$actionLabel: ${topic ?? subject ?? "Session ready"}'),
-        backgroundColor: const Color(0xFF38BDF8),
+        content: Text(
+          '$actionLabel: ${topic ?? subject ?? "Session ready"}',
+          style: TextStyle(color: tok.buttonText),
+        ),
+        backgroundColor: tok.primary,
         duration: const Duration(seconds: 2),
       ),
     );

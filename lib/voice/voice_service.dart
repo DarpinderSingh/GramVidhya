@@ -74,12 +74,12 @@ class VoiceService {
       }
       _isRecording = true;
       await _stt.listen(
-        localeId: langLocales[code]?.replaceAll('-', '_'),
         onResult: (r) {
           _last = r.recognizedWords;
           onText(_last);
         },
         listenOptions: SpeechListenOptions(
+          localeId: langLocales[code]?.replaceAll('-', '_'),
           onDevice: true,
           cancelOnError: true,
           partialResults: true,

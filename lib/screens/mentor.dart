@@ -109,20 +109,25 @@ class _MentorScreenState extends State<MentorScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final tok = context.tokens;
     final humanMentor = Store.mentor;
 
     if (!_isServiceInitialized) {
-      return const Scaffold(
+      return Scaffold(
+        backgroundColor: tok.backgroundPrimary,
         body: Center(
-          child: CircularProgressIndicator(color: Color(0xFF38BDF8)),
+          child: CircularProgressIndicator(color: tok.primary),
         ),
       );
     }
 
     return Scaffold(
+      backgroundColor: tok.backgroundPrimary,
       appBar: AppBar(
-        title: Text(tr('mentor_title'), style: const TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: tok.backgroundPrimary,
+        elevation: 0,
+        iconTheme: IconThemeData(color: tok.textPrimary),
+        title: Text(tr('mentor_title'), style: TextStyle(fontWeight: FontWeight.bold, color: tok.textPrimary)),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -131,23 +136,23 @@ class _MentorScreenState extends State<MentorScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 1. DIGITAL MENTOR CARD
-              _buildDigitalMentorCard(theme),
+              _buildDigitalMentorCard(tok),
               const SizedBox(height: 24),
 
               // 2. YOUR PROGRESS SECTION
-              _buildYourProgressSection(theme),
+              _buildYourProgressSection(tok),
               const SizedBox(height: 24),
 
               // 3. NEEDS ATTENTION (WEAK TOPICS)
-              _buildNeedsAttentionSection(theme),
+              _buildNeedsAttentionSection(tok),
               const SizedBox(height: 24),
 
               // 4. QUICK ACTIONS
-              _buildQuickActionsSection(theme),
+              _buildQuickActionsSection(tok),
               const SizedBox(height: 28),
 
               // 5. HUMAN MENTOR SECTION
-              _buildHumanMentorSection(theme, humanMentor),
+              _buildHumanMentorSection(tok, humanMentor),
             ],
           ),
         ),
@@ -156,7 +161,7 @@ class _MentorScreenState extends State<MentorScreen> {
   }
 
   // ──── 1. DIGITAL MENTOR CARD ────
-  Widget _buildDigitalMentorCard(ThemeData theme) {
+  Widget _buildDigitalMentorCard(SemanticThemeTokens tok) {
     final profile = _service.profile;
     final plan = _service.dailyPlan;
     final timeGreeting = _getTimeGreeting();
@@ -168,17 +173,16 @@ class _MentorScreenState extends State<MentorScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
+        gradient: LinearGradient(
+          colors: [tok.primary, tok.primaryPressed],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF38BDF8).withValues(alpha: 0.3)),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF38BDF8).withValues(alpha: 0.08),
-            blurRadius: 16,
+            color: tok.shadow,
+            blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
@@ -192,10 +196,10 @@ class _MentorScreenState extends State<MentorScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF38BDF8).withValues(alpha: 0.15),
+                  color: tok.buttonText.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.psychology, color: Color(0xFF38BDF8), size: 24),
+                child: Icon(Icons.psychology, color: tok.buttonText, size: 24),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -204,15 +208,15 @@ class _MentorScreenState extends State<MentorScreen> {
                   children: [
                     Text(
                       tr('digital_mentor'),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: tok.buttonText,
                       ),
                     ),
                     Text(
                       tr('digital_mentor_desc'),
-                      style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.7)),
+                      style: TextStyle(fontSize: 12, color: tok.buttonText.withValues(alpha: 0.7)),
                     ),
                   ],
                 ),
@@ -220,16 +224,16 @@ class _MentorScreenState extends State<MentorScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                  color: tok.success.withValues(alpha: 0.25),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.5)),
+                  border: Border.all(color: tok.success.withValues(alpha: 0.6)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.bolt, color: Color(0xFF10B981), size: 12),
+                    Icon(Icons.bolt, color: tok.buttonText, size: 12),
                     const SizedBox(width: 4),
-                    Text(tr('offline_ai_badge'), style: const TextStyle(fontSize: 10, color: Color(0xFF10B981), fontWeight: FontWeight.bold)),
+                    Text(tr('offline_ai_badge'), style: TextStyle(fontSize: 10, color: tok.buttonText, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
@@ -240,12 +244,12 @@ class _MentorScreenState extends State<MentorScreen> {
           // Personalized Greeting & Message
           Text(
             greeting,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: tok.buttonText),
           ),
           const SizedBox(height: 6),
           Text(
             progressMsg,
-            style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.85), height: 1.4),
+            style: TextStyle(fontSize: 13, color: tok.buttonText.withValues(alpha: 0.85), height: 1.4),
           ),
           const SizedBox(height: 18),
 
@@ -253,9 +257,9 @@ class _MentorScreenState extends State<MentorScreen> {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: const Color(0xFF0F172A),
+              color: tok.buttonText.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+              border: Border.all(color: tok.buttonText.withValues(alpha: 0.15)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -265,11 +269,11 @@ class _MentorScreenState extends State<MentorScreen> {
                   children: [
                     Text(
                       tr('todays_goal'),
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF38BDF8)),
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: tok.buttonText),
                     ),
                     Text(
                       '${tr("estimated_time")}: $goalMinutes ${tr("mins")}',
-                      style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.6)),
+                      style: TextStyle(fontSize: 11, color: tok.buttonText.withValues(alpha: 0.7)),
                     ),
                   ],
                 ),
@@ -280,13 +284,13 @@ class _MentorScreenState extends State<MentorScreen> {
                     Expanded(
                       child: Text(
                         profile.currentTopic,
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: tok.buttonText),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     Text(
                       '${(_service.getSubjectProgress(profile.currentSubject) * 100).toInt()}%',
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF38BDF8)),
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: tok.buttonText),
                     ),
                   ],
                 ),
@@ -295,8 +299,8 @@ class _MentorScreenState extends State<MentorScreen> {
                   borderRadius: BorderRadius.circular(6),
                   child: LinearProgressIndicator(
                     value: _service.getSubjectProgress(profile.currentSubject),
-                    backgroundColor: Colors.white.withValues(alpha: 0.1),
-                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF38BDF8)),
+                    backgroundColor: tok.buttonText.withValues(alpha: 0.2),
+                    valueColor: AlwaysStoppedAnimation<Color>(tok.buttonText),
                     minHeight: 6,
                   ),
                 ),
@@ -313,11 +317,11 @@ class _MentorScreenState extends State<MentorScreen> {
                   onPressed: () => _openDigitalMentorChat(
                     initialQuery: "Let's start today's session on ${profile.currentTopic}.",
                   ),
-                  icon: const Icon(Icons.play_arrow, size: 18),
-                  label: Text(tr('start_session')),
+                  icon: Icon(Icons.play_arrow, size: 18, color: tok.primary),
+                  label: Text(tr('start_session'), style: TextStyle(color: tok.primary, fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF38BDF8),
-                    foregroundColor: const Color(0xFF0F172A),
+                    backgroundColor: tok.buttonText,
+                    foregroundColor: tok.primary,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
@@ -327,20 +331,20 @@ class _MentorScreenState extends State<MentorScreen> {
               OutlinedButton(
                 onPressed: () => _openDigitalMentorChat(),
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Color(0xFF38BDF8)),
+                  side: BorderSide(color: tok.buttonText),
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
-                child: Text(tr('ask_mentor'), style: const TextStyle(color: Color(0xFF38BDF8))),
+                child: Text(tr('ask_mentor'), style: TextStyle(color: tok.buttonText, fontWeight: FontWeight.bold)),
               ),
               const SizedBox(width: 8),
               IconButton.filledTonal(
                 onPressed: () => _openDigitalMentorChat(
                   initialQuery: "Namaste Mentor, I want to talk to you.",
                 ),
-                icon: const Icon(Icons.mic, color: Color(0xFF38BDF8)),
+                icon: Icon(Icons.mic, color: tok.buttonText),
                 style: IconButton.styleFrom(
-                  backgroundColor: const Color(0xFF38BDF8).withValues(alpha: 0.15),
+                  backgroundColor: tok.buttonText.withValues(alpha: 0.2),
                 ),
                 tooltip: tr('talk_to_mentor'),
               ),
@@ -352,8 +356,7 @@ class _MentorScreenState extends State<MentorScreen> {
   }
 
   // ──── 2. YOUR PROGRESS SECTION ────
-  Widget _buildYourProgressSection(ThemeData theme) {
-    final tok = context.tokens;
+  Widget _buildYourProgressSection(SemanticThemeTokens tok) {
     final progressMap = _service.getAllSubjectProgress();
     final hasAnyProgress = progressMap.values.any((v) => v > 0);
 
@@ -362,12 +365,12 @@ class _MentorScreenState extends State<MentorScreen> {
       children: [
         Text(
           tr('your_progress'),
-          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: tok.textPrimary),
         ),
         const SizedBox(height: 12),
         Container(
           decoration: BoxDecoration(
-            color: tok.surface,
+            color: tok.cardBackground,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: tok.border),
           ),
@@ -385,7 +388,7 @@ class _MentorScreenState extends State<MentorScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(entry.key, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: tok.textPrimary)),
-                              Text('$pct%', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: tok.accent)),
+                              Text('$pct%', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: tok.primary)),
                             ],
                           ),
                           const SizedBox(height: 6),
@@ -395,7 +398,7 @@ class _MentorScreenState extends State<MentorScreen> {
                               value: entry.value,
                               backgroundColor: tok.border,
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                entry.value > 0.7 ? const Color(0xFF10B981) : tok.accent,
+                                entry.value > 0.7 ? tok.success : tok.primary,
                               ),
                               minHeight: 6,
                             ),
@@ -423,8 +426,7 @@ class _MentorScreenState extends State<MentorScreen> {
   }
 
   // ──── 3. NEEDS ATTENTION (WEAK TOPICS) ────
-  Widget _buildNeedsAttentionSection(ThemeData theme) {
-    final tok = context.tokens;
+  Widget _buildNeedsAttentionSection(SemanticThemeTokens tok) {
     final weakTopics = _service.memory.weakTopics;
 
     return Column(
@@ -436,7 +438,7 @@ class _MentorScreenState extends State<MentorScreen> {
             const SizedBox(width: 8),
             Text(
               tr('needs_attention'),
-              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: tok.textPrimary),
             ),
           ],
         ),
@@ -444,14 +446,14 @@ class _MentorScreenState extends State<MentorScreen> {
         if (weakTopics.isEmpty)
           Container(
             decoration: BoxDecoration(
-              color: tok.surface,
+              color: tok.cardBackground,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: tok.border),
             ),
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                const Icon(Icons.check_circle_outline, color: Color(0xFF10B981), size: 22),
+                Icon(Icons.check_circle_outline, color: tok.success, size: 22),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
@@ -468,7 +470,7 @@ class _MentorScreenState extends State<MentorScreen> {
               return Container(
                 margin: const EdgeInsets.only(bottom: 10),
                 decoration: BoxDecoration(
-                  color: tok.surface,
+                  color: tok.cardBackground,
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: tok.warning.withValues(alpha: 0.35)),
                 ),
@@ -497,7 +499,7 @@ class _MentorScreenState extends State<MentorScreen> {
                       onPressed: () => _openDigitalMentorChat(
                         initialQuery: "Please explain and give me practice on ${w.topic}.",
                       ),
-                      child: Text(tr('revision'), style: TextStyle(color: tok.accent, fontSize: 13)),
+                      child: Text(tr('revision'), style: TextStyle(color: tok.primary, fontSize: 13)),
                     ),
                   ],
                 ),
@@ -509,14 +511,14 @@ class _MentorScreenState extends State<MentorScreen> {
   }
 
   // ──── 4. QUICK ACTIONS ────
-  Widget _buildQuickActionsSection(ThemeData theme) {
+  Widget _buildQuickActionsSection(SemanticThemeTokens tok) {
     final profile = _service.profile;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           tr('quick_actions'),
-          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: tok.textPrimary),
         ),
         const SizedBox(height: 12),
         Row(
@@ -579,14 +581,14 @@ class _MentorScreenState extends State<MentorScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
         decoration: BoxDecoration(
-          color: tok.surface,
+          color: tok.cardBackground,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: tok.border),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 18, color: tok.accent),
+            Icon(icon, size: 18, color: tok.primary),
             const SizedBox(width: 8),
             Flexible(
               child: Text(
@@ -602,33 +604,33 @@ class _MentorScreenState extends State<MentorScreen> {
   }
 
   // ──── 5. HUMAN MENTOR SECTION ────
-  Widget _buildHumanMentorSection(ThemeData theme, Map<String, dynamic>? humanMentor) {
+  Widget _buildHumanMentorSection(SemanticThemeTokens tok, Map<String, dynamic>? humanMentor) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            const Icon(Icons.person, color: Color(0xFF6366F1), size: 22),
+            Icon(Icons.person, color: tok.primary, size: 22),
             const SizedBox(width: 8),
             Text(
               tr('human_mentor'),
-              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: tok.textPrimary),
             ),
           ],
         ),
         const SizedBox(height: 12),
         if (humanMentor != null) ...[
-          _buildAssignedHumanMentorCard(theme, humanMentor),
+          _buildAssignedHumanMentorCard(tok, humanMentor),
           const SizedBox(height: 16),
-          _buildHumanSessionsSection(theme),
+          _buildHumanSessionsSection(tok),
         ] else ...[
-          _buildUnassignedHumanMentorView(theme),
+          _buildUnassignedHumanMentorView(tok),
         ],
       ],
     );
   }
 
-  Widget _buildAssignedHumanMentorCard(ThemeData theme, Map<String, dynamic> mentor) {
+  Widget _buildAssignedHumanMentorCard(SemanticThemeTokens tok, Map<String, dynamic> mentor) {
     final name = mentor['name'] as String? ?? 'Dr. Ramesh Sharma';
     final spec = mentor['specialization'] as String? ?? 'Science & Mathematics';
     final inst = mentor['institution'] as String? ?? '';
@@ -636,10 +638,9 @@ class _MentorScreenState extends State<MentorScreen> {
     final email = mentor['email'] as String? ?? 'ramesh.sharma@gramvidya.org';
     final phone = mentor['phone'] as String? ?? '+91 98765 43210';
 
-    final tok = context.tokens;
     return Container(
       decoration: BoxDecoration(
-        color: tok.surface,
+        color: tok.cardBackground,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: tok.border),
       ),
@@ -652,10 +653,10 @@ class _MentorScreenState extends State<MentorScreen> {
               children: [
                 CircleAvatar(
                   radius: 26,
-                  backgroundColor: const Color(0xFF6366F1).withValues(alpha: 0.2),
+                  backgroundColor: tok.primary.withValues(alpha: 0.15),
                   child: Text(
                     name.isNotEmpty ? name[0] : 'M',
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF818CF8)),
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: tok.primary),
                   ),
                 ),
                 const SizedBox(width: 14),
@@ -665,7 +666,7 @@ class _MentorScreenState extends State<MentorScreen> {
                     children: [
                       Text(name, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: tok.textPrimary)),
                       const SizedBox(height: 2),
-                      Text(spec, style: TextStyle(fontSize: 13, color: tok.accent)),
+                      Text(spec, style: TextStyle(fontSize: 13, color: tok.secondaryAccent)),
                       if (inst.isNotEmpty) ...[
                         const SizedBox(height: 2),
                         Text(inst, style: TextStyle(fontSize: 11, color: tok.textMuted)),
@@ -687,11 +688,11 @@ class _MentorScreenState extends State<MentorScreen> {
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed: () => _showBookSessionDialog(name),
-                    icon: const Icon(Icons.calendar_today, size: 16),
-                    label: Text(tr('mentor_book')),
+                    icon: Icon(Icons.calendar_today, size: 16, color: tok.buttonText),
+                    label: Text(tr('mentor_book'), style: TextStyle(color: tok.buttonText)),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF6366F1),
-                      foregroundColor: Colors.white,
+                      backgroundColor: tok.buttonPrimary,
+                      foregroundColor: tok.buttonText,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       padding: const EdgeInsets.symmetric(vertical: 10),
                     ),
@@ -704,8 +705,8 @@ class _MentorScreenState extends State<MentorScreen> {
                     setState(() {});
                   },
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.redAccent,
-                    side: const BorderSide(color: Colors.redAccent),
+                    foregroundColor: tok.error,
+                    side: BorderSide(color: tok.error),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
                   ),
@@ -724,7 +725,7 @@ class _MentorScreenState extends State<MentorScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 16, color: tok.accent),
+        Icon(icon, size: 16, color: tok.primary),
         const SizedBox(width: 8),
         Text('$label: ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: tok.textSecondary)),
         Expanded(child: Text(value, style: TextStyle(fontSize: 12, color: tok.textPrimary))),
@@ -732,33 +733,31 @@ class _MentorScreenState extends State<MentorScreen> {
     );
   }
 
-  Widget _buildHumanSessionsSection(ThemeData theme) {
-    final tok = context.tokens;
+  Widget _buildHumanSessionsSection(SemanticThemeTokens tok) {
     return Container(
       decoration: BoxDecoration(
-        color: tok.surface,
+        color: tok.cardBackground,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: tok.border),
       ),
       child: ListTile(
-        leading: const CircleAvatar(
-          backgroundColor: Color(0xFF10B981),
+        leading: CircleAvatar(
+          backgroundColor: tok.success,
           radius: 16,
-          child: Icon(Icons.check, color: Colors.white, size: 16),
+          child: Icon(Icons.check, color: tok.buttonText, size: 16),
         ),
         title: Text('Introduction & Learning Plan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: tok.textPrimary)),
         subtitle: Text('Scheduled via local centre. Offline notes synced.', style: TextStyle(fontSize: 11, color: tok.textMuted)),
         trailing: Chip(
-          label: Text(tr('offline'), style: const TextStyle(fontSize: 10)),
-          backgroundColor: const Color(0xFF10B981).withValues(alpha: 0.2),
+          label: Text(tr('offline'), style: TextStyle(fontSize: 10, color: tok.textPrimary)),
+          backgroundColor: tok.success.withValues(alpha: 0.2),
           padding: EdgeInsets.zero,
         ),
       ),
     );
   }
 
-  Widget _buildUnassignedHumanMentorView(ThemeData theme) {
-    final tok = context.tokens;
+  Widget _buildUnassignedHumanMentorView(SemanticThemeTokens tok) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -803,7 +802,7 @@ class _MentorScreenState extends State<MentorScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: tok.surface,
+        color: tok.cardBackground,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: tok.border),
       ),
@@ -815,10 +814,10 @@ class _MentorScreenState extends State<MentorScreen> {
             Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: const Color(0xFF6366F1).withValues(alpha: 0.2),
+                  backgroundColor: tok.primary.withValues(alpha: 0.15),
                   child: Text(
                     (m['name'] as String)[0],
-                    style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF818CF8)),
+                    style: TextStyle(fontWeight: FontWeight.bold, color: tok.primary),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -827,7 +826,7 @@ class _MentorScreenState extends State<MentorScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(m['name'] as String, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: tok.textPrimary)),
-                      Text(m['specialization'] as String, style: TextStyle(fontSize: 12, color: tok.accent)),
+                      Text(m['specialization'] as String, style: TextStyle(fontSize: 12, color: tok.secondaryAccent)),
                     ],
                   ),
                 ),
@@ -842,8 +841,8 @@ class _MentorScreenState extends State<MentorScreen> {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6366F1),
-                    foregroundColor: Colors.white,
+                    backgroundColor: tok.buttonPrimary,
+                    foregroundColor: tok.buttonText,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   ),
@@ -872,13 +871,13 @@ class _MentorScreenState extends State<MentorScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: tok.surface,
-        title: Text(tr('mentor_book')),
-        content: Text('Session request registered for $mentorName. The session will be confirmed when synced with the local centre.'),
+        backgroundColor: tok.cardBackground,
+        title: Text(tr('mentor_book'), style: TextStyle(color: tok.textPrimary)),
+        content: Text('Session request registered for $mentorName. The session will be confirmed when synced with the local centre.', style: TextStyle(color: tok.textSecondary)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(tr('ok'), style: const TextStyle(color: Color(0xFF38BDF8))),
+            child: Text(tr('ok'), style: TextStyle(color: tok.primary)),
           ),
         ],
       ),

@@ -7,17 +7,29 @@ class Chunk {
   final String id, subject, text;
 }
 
-/// Offline BM25 retrieval. Swap for ObjectBox / sqlite-vec embeddings later (same search() contract).
+/// Offline BM25 retrieval for curriculum notes.
 class Rag {
   final _chunks = <Chunk>[];
   final _tf = <Map<String, int>>[];
   final _df = <String, int>{};
   static final _re = RegExp(r'[\p{L}\p{N}]+', unicode: true);
-  List<Chunk> get chunks => _chunks;
-  List<String> _tok(String s) => _re.allMatches(s.toLowerCase()).map((m) => m[0]!).toList();
 
-  Future<void> load() async =>
+  static const _stopWords = {
+    'what', 'is', 'are', 'in', 'the', 'a', 'an', 'to', 'for', 'of', 'and', 'or', 'how', 'why',
+    'explain', 'me', 'tell', 'about', 'simple', 'hindi', 'english', 'tamil', 'telugu',
+    'kya', 'hai', 'batao', 'kaise', 'student', 'class', 'with', 'by', 'this', 'that'
+  };
+
+  List<Chunk> get chunks => _chunks;
+
+  List<String> _tok(String s) =>
+      _re.allMatches(s.toLowerCase()).map((m) => m[0]!).where((w) => !_stopWords.contains(w) && w.length > 2).toList();
+
+  Future<void> load() async {
+    try {
       addJson(await rootBundle.loadString('assets/content/chunks.json'));
+    } catch (_) {}
+  }
 
   /// Also used to import content packs received over P2P.
   void addJson(String raw) {
@@ -36,18 +48,23 @@ class Rag {
     }
   }
 
-  List<Chunk> search(String q, {int k = 3}) {
-    final n = _chunks.length, qs = _tok(q), sc = <int, double>{};
+  List<Chunk> search(String q, {int k = 2, double minScore = 2.5}) {
+    final n = _chunks.length;
+    final qs = _tok(q);
+    if (qs.isEmpty || n == 0) return const [];
+
+    final sc = <int, double>{};
     for (var i = 0; i < n; i++) {
       var s = 0.0;
       for (final w in qs) {
         final f = _tf[i][w];
         if (f == null) continue;
-        final d = _df[w]!;
+        final d = _df[w] ?? 1;
         s += log(1 + (n - d + 0.5) / (d + 0.5)) * (f * 2.2) / (f + 1.2);
       }
-      if (s > 0) sc[i] = s;
+      if (s >= minScore) sc[i] = s;
     }
+
     final ids = sc.keys.toList()..sort((a, b) => sc[b]!.compareTo(sc[a]!));
     return ids.take(k).map((i) => _chunks[i]).toList();
   }

@@ -88,18 +88,22 @@ class _MentorChatScreenState extends State<MentorChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final tok = context.tokens;
     final profile = widget.service.profile;
 
     return Scaffold(
+      backgroundColor: tok.backgroundPrimary,
       appBar: AppBar(
+        backgroundColor: tok.backgroundPrimary,
+        elevation: 0,
+        iconTheme: IconThemeData(color: tok.textPrimary),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(tr('digital_mentor'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            Text(tr('digital_mentor'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: tok.textPrimary)),
             Text(
               '${profile.name} • ${profile.currentSubject}',
-              style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.7)),
+              style: TextStyle(fontSize: 12, color: tok.textSecondary),
             ),
           ],
         ),
@@ -115,7 +119,7 @@ class _MentorChatScreenState extends State<MentorChatScreen> {
                     : mode == ThemeMode.dark
                         ? Icons.dark_mode
                         : Icons.brightness_auto,
-                color: Colors.white,
+                color: tok.textPrimary,
                 size: 20,
               ),
               onPressed: () {
@@ -133,18 +137,18 @@ class _MentorChatScreenState extends State<MentorChatScreen> {
             margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: const Color(0xFF10B981).withValues(alpha: 0.2),
+              color: tok.success.withValues(alpha: 0.18),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.5)),
+              border: Border.all(color: tok.success.withValues(alpha: 0.4)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.bolt, color: Color(0xFF10B981), size: 14),
+                Icon(Icons.bolt, color: tok.success, size: 14),
                 const SizedBox(width: 4),
                 Text(
                   tr('offline_ai_badge'),
-                  style: const TextStyle(color: Color(0xFF10B981), fontSize: 11, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: tok.success, fontSize: 11, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -155,7 +159,7 @@ class _MentorChatScreenState extends State<MentorChatScreen> {
       body: Column(
         children: [
           // Suggestions Bar
-          _buildSuggestionsBar(),
+          _buildSuggestionsBar(tok),
 
           // Message List
           Expanded(
@@ -165,7 +169,7 @@ class _MentorChatScreenState extends State<MentorChatScreen> {
               itemCount: _controller.messages.length,
               itemBuilder: (ctx, i) {
                 final msg = _controller.messages[i];
-                return _buildMessageBubble(msg, theme);
+                return _buildMessageBubble(msg, tok);
               },
             ),
           ),
@@ -176,15 +180,15 @@ class _MentorChatScreenState extends State<MentorChatScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               child: Row(
                 children: [
-                  const SizedBox(
+                  SizedBox(
                     width: 14,
                     height: 14,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF38BDF8)),
+                    child: CircularProgressIndicator(strokeWidth: 2, color: tok.primary),
                   ),
                   const SizedBox(width: 10),
                   Text(
                     tr('typing'),
-                    style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.6)),
+                    style: TextStyle(fontSize: 12, color: tok.textSecondary),
                   ),
                 ],
               ),
@@ -192,17 +196,16 @@ class _MentorChatScreenState extends State<MentorChatScreen> {
 
           // Voice Status Feedback
           if (_controller.voiceState != VoiceState.idle)
-            _buildVoiceStatusBanner(),
+            _buildVoiceStatusBanner(tok),
 
           // Input Bar
-          _buildInputBar(theme),
+          _buildInputBar(tok),
         ],
       ),
     );
   }
 
-  Widget _buildSuggestionsBar() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  Widget _buildSuggestionsBar(SemanticThemeTokens tok) {
     return Container(
       height: 44,
       margin: const EdgeInsets.only(top: 8),
@@ -214,9 +217,9 @@ class _MentorChatScreenState extends State<MentorChatScreen> {
         itemBuilder: (ctx, i) {
           final prompt = _suggestedPrompts[i];
           return ActionChip(
-            label: Text(prompt, style: const TextStyle(fontSize: 12)),
-            backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.grey.shade100,
-            side: BorderSide(color: const Color(0xFF38BDF8).withValues(alpha: 0.3)),
+            label: Text(prompt, style: TextStyle(fontSize: 12, color: tok.textPrimary)),
+            backgroundColor: tok.cardBackground,
+            side: BorderSide(color: tok.border),
             onPressed: () => _handleSend(prompt),
           );
         },
@@ -224,9 +227,8 @@ class _MentorChatScreenState extends State<MentorChatScreen> {
     );
   }
 
-  Widget _buildMessageBubble(MentorChatMessage msg, ThemeData theme) {
+  Widget _buildMessageBubble(MentorChatMessage msg, SemanticThemeTokens tok) {
     final isUser = msg.isUser;
-    final tok = context.tokens;
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -235,8 +237,8 @@ class _MentorChatScreenState extends State<MentorChatScreen> {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: isUser
-              ? tok.accent
-              : tok.surface,
+              ? tok.primary
+              : tok.cardBackground,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16),
             topRight: const Radius.circular(16),
@@ -257,11 +259,11 @@ class _MentorChatScreenState extends State<MentorChatScreen> {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.school, size: 14, color: tok.accent),
+                      Icon(Icons.school, size: 14, color: tok.primary),
                       const SizedBox(width: 6),
                       Text(
                         tr('digital_mentor'),
-                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: tok.accent),
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: tok.primary),
                       ),
                     ],
                   ),
@@ -274,7 +276,7 @@ class _MentorChatScreenState extends State<MentorChatScreen> {
                       ),
                       child: Text(
                         msg.sourceAttribution!,
-                        style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: tok.accent),
+                        style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: tok.primary),
                       ),
                     ),
                 ],
@@ -285,13 +287,13 @@ class _MentorChatScreenState extends State<MentorChatScreen> {
               msg.text,
               style: TextStyle(
                 fontSize: 14,
-                color: isUser ? Colors.white : tok.textPrimary,
+                color: isUser ? tok.buttonText : tok.textPrimary,
                 height: 1.4,
               ),
             ),
             if (msg.action != null && msg.action!.type != MentorActionType.noAction) ...[
               const SizedBox(height: 12),
-              _buildStructuredActionButton(msg.action!),
+              _buildStructuredActionButton(msg.action!, tok),
             ],
           ],
         ),
@@ -299,44 +301,44 @@ class _MentorChatScreenState extends State<MentorChatScreen> {
     );
   }
 
-  Widget _buildStructuredActionButton(MentorAction action) {
+  Widget _buildStructuredActionButton(MentorAction action, SemanticThemeTokens tok) {
     return ElevatedButton.icon(
       onPressed: () => action.execute(context),
-      icon: Icon(action.actionIcon, size: 16),
-      label: Text(action.actionLabel),
+      icon: Icon(action.actionIcon, size: 16, color: tok.buttonText),
+      label: Text(action.actionLabel, style: TextStyle(color: tok.buttonText)),
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF38BDF8),
-        foregroundColor: const Color(0xFF0F172A),
+        backgroundColor: tok.buttonPrimary,
+        foregroundColor: tok.buttonText,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
     );
   }
 
-  Widget _buildVoiceStatusBanner() {
+  Widget _buildVoiceStatusBanner(SemanticThemeTokens tok) {
     String text = '';
-    Color color = const Color(0xFF38BDF8);
+    Color color = tok.primary;
     IconData icon = Icons.mic;
 
     switch (_controller.voiceState) {
       case VoiceState.listening:
         text = tr('listening_state');
-        color = Colors.redAccent;
+        color = tok.error;
         icon = Icons.mic;
         break;
       case VoiceState.processing:
         text = 'Processing voice audio...';
-        color = Colors.amber;
+        color = tok.warning;
         icon = Icons.hourglass_top;
         break;
       case VoiceState.speaking:
         text = tr('speaking_state');
-        color = const Color(0xFF10B981);
+        color = tok.success;
         icon = Icons.volume_up;
         break;
       case VoiceState.error:
         text = _controller.errorMessage.isNotEmpty ? _controller.errorMessage : 'Voice error';
-        color = Colors.redAccent;
+        color = tok.error;
         icon = Icons.error_outline;
         break;
       case VoiceState.idle:
@@ -358,15 +360,14 @@ class _MentorChatScreenState extends State<MentorChatScreen> {
     );
   }
 
-  Widget _buildInputBar(ThemeData theme) {
+  Widget _buildInputBar(SemanticThemeTokens tok) {
     final isListening = _controller.voiceState == VoiceState.listening;
-    final isDark = theme.brightness == Brightness.dark;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
-        border: Border(top: BorderSide(color: isDark ? const Color(0xFF334155) : Colors.grey.shade300)),
+        color: tok.cardBackground,
+        border: Border(top: BorderSide(color: tok.border)),
       ),
       child: SafeArea(
         child: Row(
@@ -375,7 +376,7 @@ class _MentorChatScreenState extends State<MentorChatScreen> {
             IconButton(
               icon: Icon(
                 isListening ? Icons.mic : Icons.mic_none,
-                color: isListening ? Colors.redAccent : const Color(0xFF38BDF8),
+                color: isListening ? tok.error : tok.primary,
               ),
               onPressed: () => _controller.toggleVoice((t) => _textController.text = t),
             ),
@@ -386,15 +387,20 @@ class _MentorChatScreenState extends State<MentorChatScreen> {
               child: TextField(
                 controller: _textController,
                 textInputAction: TextInputAction.send,
+                style: TextStyle(color: tok.textPrimary, fontSize: 14),
                 onSubmitted: (v) => _handleSend(),
                 decoration: InputDecoration(
                   hintText: tr('hint'),
                   hintStyle: TextStyle(
-                    color: isDark ? Colors.white.withValues(alpha: 0.4) : Colors.grey.shade500,
+                    color: tok.textMuted,
                     fontSize: 14,
                   ),
                   border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  fillColor: tok.backgroundSecondary,
+                  filled: true,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 ),
               ),
             ),
@@ -402,7 +408,7 @@ class _MentorChatScreenState extends State<MentorChatScreen> {
 
             // Send Button
             IconButton(
-              icon: const Icon(Icons.send, color: Color(0xFF38BDF8)),
+              icon: Icon(Icons.send, color: tok.primary),
               onPressed: () => _handleSend(),
             ),
           ],

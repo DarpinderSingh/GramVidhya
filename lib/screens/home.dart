@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import '../ai/inference_controller.dart';
 import '../core/i18n.dart';
+import '../core/theme.dart';
 import '../data/auth_service.dart';
 import '../data/store.dart';
 import '../mentor/mentor_models.dart';
 import '../mentor/mentor_service.dart';
 import 'auth_screen.dart';
+import 'model_manager_screen.dart';
 import 'dart:async';
 import 'package:gramvidya/main.dart' show appThemeMode, setThemeMode;
 import '../data/content_repository.dart';
@@ -42,43 +44,60 @@ class _HomeState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final tok = context.tokens;
     final quotes = [tr('quote1'), tr('quote2'), tr('quote3')];
 
     return Scaffold(
+      backgroundColor: tok.backgroundPrimary,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
             expandedHeight: 200,
             floating: false,
             pinned: true,
+            backgroundColor: tok.primary,
+            foregroundColor: tok.buttonText,
             flexibleSpace: FlexibleSpaceBar(
-              title: Text(tr('app_title'), style: const TextStyle(fontWeight: FontWeight.bold)),
+              title: Text(
+                tr('app_title'),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: tok.buttonText,
+                ),
+              ),
               background: Container(
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+                    colors: tok.heroGradient,
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                   ),
                 ),
                 child: Center(
                   child: Padding(
-                    padding: const EdgeInsets.only(top: 40.0, left: 16, right: 16),
+                    padding:
+                        const EdgeInsets.only(top: 40.0, left: 16, right: 16),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.school, size: 48, color: Color(0xFF38BDF8)),
+                        Icon(Icons.school, size: 48, color: tok.buttonText),
                         const SizedBox(height: 8),
                         Text(
                           tr('welcome'),
-                          style: theme.textTheme.titleLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            fontSize: 20,
+                            color: tok.buttonText,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           tr('welcome_sub'),
                           textAlign: TextAlign.center,
-                          style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey[400]),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: tok.buttonText.withValues(alpha: 0.8),
+                          ),
                         ),
                       ],
                     ),
@@ -89,11 +108,17 @@ class _HomeState extends State<HomeScreen> {
             actions: [
               // Language selector
               DropdownButton<String>(
-                dropdownColor: const Color(0xFF1E293B),
+                dropdownColor: tok.cardBackground,
                 value: appLang.value,
-                icon: const Icon(Icons.language, color: Colors.white),
+                icon: Icon(Icons.language, color: tok.buttonText),
                 underline: const SizedBox(),
-                items: langNames.entries.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value))).toList(),
+                items: langNames.entries
+                    .map((e) => DropdownMenuItem(
+                          value: e.key,
+                          child: Text(e.value,
+                              style: TextStyle(color: tok.textPrimary)),
+                        ))
+                    .toList(),
                 onChanged: (v) => setLanguage(v!),
               ),
               // Online / Offline Toggle
@@ -102,10 +127,12 @@ class _HomeState extends State<HomeScreen> {
                 builder: (ctx, _) {
                   final isOnline = ContentRepository().isOnline;
                   return IconButton(
-                    tooltip: isOnline ? 'Online Mode (Tap to switch to Offline)' : 'Offline Mode (Tap to switch to Online)',
+                    tooltip: isOnline
+                        ? 'Online Mode (Tap to switch to Offline)'
+                        : 'Offline Mode (Tap to switch to Online)',
                     icon: Icon(
                       isOnline ? Icons.cloud_done : Icons.cloud_off,
-                      color: isOnline ? const Color(0xFF10B981) : Colors.amber,
+                      color: isOnline ? tok.buttonText : tok.warning,
                       size: 22,
                     ),
                     onPressed: () async {
@@ -115,12 +142,26 @@ class _HomeState extends State<HomeScreen> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             duration: const Duration(seconds: 2),
-                            backgroundColor: nowOnline ? const Color(0xFF10B981) : Colors.amber.shade900,
+                            backgroundColor:
+                                nowOnline ? tok.success : tok.warning,
                             content: Row(
                               children: [
-                                Icon(nowOnline ? Icons.cloud_done : Icons.cloud_off, color: Colors.white, size: 18),
+                                Icon(
+                                  nowOnline
+                                      ? Icons.cloud_done
+                                      : Icons.cloud_off,
+                                  color: tok.buttonText,
+                                  size: 18,
+                                ),
                                 const SizedBox(width: 8),
-                                Text(nowOnline ? 'Online Mode: All educational libraries active' : 'Offline Mode: Showing downloaded & cached content'),
+                                Expanded(
+                                  child: Text(
+                                    nowOnline
+                                        ? 'Online Mode: All educational libraries active'
+                                        : 'Offline Mode: Showing downloaded & cached content',
+                                    style: TextStyle(color: tok.buttonText),
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -136,15 +177,19 @@ class _HomeState extends State<HomeScreen> {
                 builder: (_, mode, __) => IconButton(
                   tooltip: tr('theme'),
                   icon: Icon(
-                    mode == ThemeMode.light ? Icons.light_mode
-                        : mode == ThemeMode.dark ? Icons.dark_mode
-                        : Icons.brightness_auto,
-                    color: Colors.white,
+                    mode == ThemeMode.light
+                        ? Icons.light_mode
+                        : mode == ThemeMode.dark
+                            ? Icons.dark_mode
+                            : Icons.brightness_auto,
+                    color: tok.buttonText,
                   ),
                   onPressed: () {
-                    final next = mode == ThemeMode.light ? ThemeMode.dark
-                        : mode == ThemeMode.dark ? ThemeMode.system
-                        : ThemeMode.light;
+                    final next = mode == ThemeMode.light
+                        ? ThemeMode.dark
+                        : mode == ThemeMode.dark
+                            ? ThemeMode.system
+                            : ThemeMode.light;
                     setThemeMode(next);
                   },
                 ),
@@ -152,12 +197,15 @@ class _HomeState extends State<HomeScreen> {
               // Profile / Auth button
               IconButton(
                 icon: Icon(
-                  widget.auth.isLoggedIn ? Icons.account_circle : Icons.account_circle_outlined,
-                  color: widget.auth.isLoggedIn ? const Color(0xFF38BDF8) : Colors.white,
+                  widget.auth.isLoggedIn
+                      ? Icons.account_circle
+                      : Icons.account_circle_outlined,
+                  color: tok.buttonText,
                 ),
                 onPressed: () {
                   Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => AuthScreen(auth: widget.auth)),
+                    MaterialPageRoute(
+                        builder: (_) => AuthScreen(auth: widget.auth)),
                   );
                 },
               ),
@@ -170,37 +218,73 @@ class _HomeState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildSoftwareInfoCard(theme),
+                  _buildSoftwareInfoCard(tok),
                   const SizedBox(height: 24),
-                  Text(tr('how_to_use'), style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                  Text(
+                    tr('how_to_use'),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: tok.textPrimary,
+                    ),
+                  ),
                   const SizedBox(height: 16),
-                  _buildHowToUseSteps(theme),
+                  _buildHowToUseSteps(tok),
                   const SizedBox(height: 24),
-                  _buildQuotesCarousel(theme, quotes),
+                  _buildQuotesCarousel(tok, quotes),
                   const SizedBox(height: 24),
-                  _buildOfflineAICard(theme),
+                  _buildOfflineAICard(tok),
                   const SizedBox(height: 24),
-                  Text(tr('content_library'), style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                  Text(
+                    tr('content_library'),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: tok.textPrimary,
+                    ),
+                  ),
                   const SizedBox(height: 16),
-                  ...widget.ai.rag.chunks.map((m) => CheckboxListTile(
-                    value: Store.done(m.id),
-                    title: Text(m.subject),
-                    subtitle: Text(m.text, maxLines: 2, overflow: TextOverflow.ellipsis),
-                    onChanged: (v) async {
-                      await Store.setDone(m.id, v!);
-                      if (v) {
-                        await MentorService().recordEvent(
-                          type: LearningEventType.lessonCompleted,
-                          subject: m.subject,
-                          topic: m.text.split('\n').first,
-                          score: 100.0,
-                        );
-                      } else {
-                        MentorService().syncFromStore();
-                      }
-                      setState(() {});
-                    },
-                  )),
+                  ...widget.ai.rag.chunks.map((m) => Card(
+                        elevation: 0,
+                        margin: const EdgeInsets.only(bottom: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(color: tok.border),
+                        ),
+                        color: tok.cardBackground,
+                        child: CheckboxListTile(
+                          activeColor: tok.primary,
+                          checkColor: tok.buttonText,
+                          value: Store.done(m.id),
+                          title: Text(
+                            m.subject,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: tok.textPrimary,
+                            ),
+                          ),
+                          subtitle: Text(
+                            m.text,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: tok.textSecondary),
+                          ),
+                          onChanged: (v) async {
+                            await Store.setDone(m.id, v!);
+                            if (v) {
+                              await MentorService().recordEvent(
+                                type: LearningEventType.lessonCompleted,
+                                subject: m.subject,
+                                topic: m.text.split('\n').first,
+                                score: 100.0,
+                              );
+                            } else {
+                              MentorService().syncFromStore();
+                            }
+                            setState(() {});
+                          },
+                        ),
+                      )),
                 ],
               ),
             ),
@@ -210,37 +294,43 @@ class _HomeState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildSoftwareInfoCard(ThemeData theme) {
+  Widget _buildSoftwareInfoCard(AppThemeTokens tok) {
     return Card(
-      elevation: 8,
-      shadowColor: Colors.black45,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          gradient: const LinearGradient(
-            colors: [Color(0xFF1E293B), Color(0xFF334155)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: tok.border),
+      ),
+      color: tok.cardBackground,
+      child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                const Icon(Icons.info_outline, color: Color(0xFF38BDF8)),
+                Icon(Icons.info_outline, color: tok.primary),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(tr('what_is'), style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                  child: Text(
+                    tr('what_is'),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: tok.textPrimary,
+                    ),
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 12),
             Text(
               tr('what_is_desc'),
-              style: const TextStyle(height: 1.5),
+              style: TextStyle(
+                height: 1.5,
+                color: tok.textSecondary,
+                fontSize: 14,
+              ),
             ),
           ],
         ),
@@ -248,18 +338,19 @@ class _HomeState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildHowToUseSteps(ThemeData theme) {
+  Widget _buildHowToUseSteps(AppThemeTokens tok) {
     return Column(
       children: [
-        _buildStepItem(theme, tr('step1'), tr('step1_desc'), Icons.mic),
-        _buildStepItem(theme, tr('step2'), tr('step2_desc'), Icons.menu_book),
-        _buildStepItem(theme, tr('step3'), tr('step3_desc'), Icons.school),
-        _buildStepItem(theme, tr('step4'), tr('step4_desc'), Icons.share),
+        _buildStepItem(tok, tr('step1'), tr('step1_desc'), Icons.mic),
+        _buildStepItem(tok, tr('step2'), tr('step2_desc'), Icons.menu_book),
+        _buildStepItem(tok, tr('step3'), tr('step3_desc'), Icons.school),
+        _buildStepItem(tok, tr('step4'), tr('step4_desc'), Icons.share),
       ],
     );
   }
 
-  Widget _buildStepItem(ThemeData theme, String step, String desc, IconData icon) {
+  Widget _buildStepItem(
+      AppThemeTokens tok, String step, String desc, IconData icon) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
       child: Row(
@@ -267,18 +358,27 @@ class _HomeState extends State<HomeScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withOpacity(0.1),
+              color: tok.primary.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: theme.colorScheme.primary),
+            child: Icon(icon, color: tok.primary),
           ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(step, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF38BDF8))),
-                Text(desc, style: const TextStyle(fontSize: 14)),
+                Text(
+                  step,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: tok.primary,
+                  ),
+                ),
+                Text(
+                  desc,
+                  style: TextStyle(fontSize: 14, color: tok.textSecondary),
+                ),
               ],
             ),
           ),
@@ -287,56 +387,142 @@ class _HomeState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildQuotesCarousel(ThemeData theme, List<String> quotes) {
+  Widget _buildQuotesCarousel(AppThemeTokens tok, List<String> quotes) {
     return Container(
       padding: const EdgeInsets.all(20),
       width: double.infinity,
       decoration: BoxDecoration(
-        color: const Color(0xFF0F172A),
+        color: tok.cardBackground,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF38BDF8).withOpacity(0.3)),
+        border: Border.all(color: tok.border),
       ),
       child: AnimatedSwitcher(
         duration: const Duration(seconds: 1),
         child: Text(
           '"${quotes[_quoteIndex]}"',
           key: ValueKey<int>(_quoteIndex),
-          style: theme.textTheme.titleMedium?.copyWith(fontStyle: FontStyle.italic, color: const Color(0xFFF472B6)),
+          style: TextStyle(
+            fontStyle: FontStyle.italic,
+            fontSize: 15,
+            color: tok.secondaryAccent,
+            fontWeight: FontWeight.w500,
+          ),
           textAlign: TextAlign.center,
         ),
       ),
     );
   }
 
-  Widget _buildOfflineAICard(ThemeData theme) {
+  Widget _buildOfflineAICard(AppThemeTokens tok) {
     return AnimatedBuilder(
-      animation: widget.ai,
-      builder: (context, _) => Card(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        color: const Color(0xFF1E293B),
-        child: ListTile(
-          contentPadding: const EdgeInsets.all(16),
-          leading: const CircleAvatar(
-            backgroundColor: Color(0xFF38BDF8),
-            child: Icon(Icons.offline_bolt, color: Colors.white),
+      animation: Listenable.merge([widget.ai, widget.ai.modelManager]),
+      builder: (context, _) {
+        final mgr = widget.ai.modelManager;
+        String statusText;
+        if (mgr.isReady) {
+          statusText = '🟢 Ready: On-device GGUF AI active';
+        } else if (mgr.isDownloading) {
+          statusText = 'Downloading AI model: ${(mgr.progress * 100).toStringAsFixed(0)}%';
+        } else if (mgr.isLoading) {
+          statusText = 'Preparing on-device offline AI...';
+        } else {
+          statusText = 'Offline model available (~350 MB)';
+        }
+
+        return Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: tok.border),
           ),
-          title: Text(tr('offline'), style: const TextStyle(fontWeight: FontWeight.bold)),
-          subtitle: Text('AI: ${widget.ai.active.name}\n${trf('progress_sync', {'n': Store.pending.toString()})}'),
-          isThreeLine: true,
-          trailing: widget.ai.isDownloading
-              ? const CircularProgressIndicator()
-              : widget.ai.active.name.contains('Notes')
-                  ? FilledButton.icon(
-                      icon: const Icon(Icons.download),
-                      label: Text(tr('download_ai')),
-                      onPressed: () async => await widget.ai.downloadOfflineModel(),
-                    )
-                  : IconButton(
-                      icon: const Icon(Icons.refresh, color: Color(0xFF38BDF8)),
-                      onPressed: () async => await widget.ai.refresh(),
+          color: tok.cardBackground,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const ModelManagerScreen(),
+                ),
+              );
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    backgroundColor: tok.primary.withValues(alpha: 0.15),
+                    child: Icon(
+                      mgr.isReady ? Icons.check_circle_outline : Icons.offline_bolt_rounded,
+                      color: mgr.isReady ? tok.success : tok.primary,
                     ),
-        ),
-      ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Offline AI Tutor',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            color: tok.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          statusText,
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            color: mgr.isReady ? tok.success : tok.textSecondary,
+                            fontWeight: mgr.isReady ? FontWeight.w600 : FontWeight.normal,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          trf('progress_sync', {'n': Store.pending.toString()}),
+                          style: TextStyle(fontSize: 11, color: tok.textMuted),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  if (mgr.isDownloading)
+                    SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        value: mgr.progress > 0 ? mgr.progress : null,
+                        color: tok.primary,
+                        strokeWidth: 2.5,
+                      ),
+                    )
+                  else if (!mgr.isReady)
+                    FilledButton.icon(
+                      icon: const Icon(Icons.download_rounded, size: 15),
+                      label: const Text('Get AI', style: TextStyle(fontSize: 12)),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: tok.primary,
+                        foregroundColor: tok.buttonText,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        minimumSize: Size.zero,
+                      ),
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const ModelManagerScreen(),
+                          ),
+                        );
+                      },
+                    )
+                  else
+                    Icon(Icons.chevron_right_rounded, color: tok.textSecondary),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

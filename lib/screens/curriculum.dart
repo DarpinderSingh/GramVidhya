@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../core/i18n.dart';
+import '../core/theme.dart';
 import '../data/content_repository.dart';
 import '../data/download_manager.dart';
 import '../data/models/learning_resource.dart';
@@ -114,23 +115,26 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final tok = context.tokens;
     final isOnline = _repository.isOnline;
 
     return Scaffold(
+      backgroundColor: tok.backgroundPrimary,
       body: NestedScrollView(
         headerSliverBuilder: (ctx, _) => [
           SliverAppBar(
             expandedHeight: 120,
             pinned: true,
+            backgroundColor: tok.backgroundPrimary,
+            elevation: 0,
+            iconTheme: IconThemeData(color: tok.textPrimary),
             actions: [
               // Online / Offline Toggle Button
               IconButton(
                 tooltip: isOnline ? 'Online Mode (Tap to switch to Offline)' : 'Offline Mode (Tap to switch to Online)',
                 icon: Icon(
                   isOnline ? Icons.cloud_done : Icons.cloud_off,
-                  color: isOnline ? const Color(0xFF10B981) : Colors.amber,
+                  color: isOnline ? tok.success : tok.warning,
                   size: 22,
                 ),
                 onPressed: _toggleOnlineOffline,
@@ -146,7 +150,7 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
                         : mode == ThemeMode.dark
                             ? Icons.dark_mode
                             : Icons.brightness_auto,
-                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    color: tok.textPrimary,
                     size: 22,
                   ),
                   onPressed: () {
@@ -167,18 +171,16 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
                 children: [
                   Text(
                     tr('nav_learn'),
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.white),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: tok.heroTitleColor),
                   ),
                   const SizedBox(width: 8),
-                  _buildNetworkBadge(isOnline),
+                  _buildNetworkBadge(isOnline, tok),
                 ],
               ),
               background: Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: isDark
-                        ? [const Color(0xFF0F172A), const Color(0xFF1E3A5F)]
-                        : [const Color(0xFF0284C7), const Color(0xFF0EA5E9)],
+                    colors: tok.heroGradient,
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -187,9 +189,9 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
             ),
             bottom: TabBar(
               controller: _tabController,
-              indicatorColor: const Color(0xFF38BDF8),
-              labelColor: const Color(0xFF38BDF8),
-              unselectedLabelColor: Colors.white70,
+              indicatorColor: tok.primary,
+              labelColor: tok.primary,
+              unselectedLabelColor: tok.textSecondary,
               tabs: [
                 Tab(icon: const Icon(Icons.explore_outlined, size: 18), text: tr('explore_courses')),
                 Tab(icon: const Icon(Icons.offline_pin_outlined, size: 18), text: tr('my_library')),
@@ -205,24 +207,24 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                color: Colors.amber.shade900.withValues(alpha: 0.25),
+                color: tok.warning.withValues(alpha: 0.15),
                 child: Row(
                   children: [
-                    const Icon(Icons.wifi_off, size: 16, color: Colors.amber),
+                    Icon(Icons.wifi_off, size: 16, color: tok.warning),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         tr('you_are_offline_banner'),
-                        style: const TextStyle(fontSize: 12, color: Colors.amber, fontWeight: FontWeight.w600),
+                        style: TextStyle(fontSize: 12, color: tok.warning, fontWeight: FontWeight.w600),
                       ),
                     ),
                     InkWell(
                       onTap: () => _tabController.animateTo(1),
                       child: Text(
                         tr('my_library'),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: Color(0xFF38BDF8),
+                          color: tok.primary,
                           decoration: TextDecoration.underline,
                         ),
                       ),
@@ -236,9 +238,9 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
               child: TabBarView(
                 controller: _tabController,
                 children: [
-                  _buildExploreTab(theme),
-                  _buildLibraryTab(theme),
-                  _buildDownloadsTab(theme),
+                  _buildExploreTab(tok),
+                  _buildLibraryTab(tok),
+                  _buildDownloadsTab(tok),
                 ],
               ),
             ),
@@ -248,28 +250,29 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
     );
   }
 
-  Widget _buildNetworkBadge(bool isOnline) {
+  Widget _buildNetworkBadge(bool isOnline, SemanticThemeTokens tok) {
+    final statusColor = isOnline ? tok.success : tok.warning;
     return InkWell(
       onTap: _toggleOnlineOffline,
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
-          color: (isOnline ? Colors.green : Colors.amber).withValues(alpha: 0.25),
+          color: statusColor.withValues(alpha: 0.25),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: (isOnline ? Colors.green : Colors.amber).withValues(alpha: 0.6)),
+          border: Border.all(color: statusColor.withValues(alpha: 0.6)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(isOnline ? Icons.cloud_done : Icons.cloud_off, size: 12, color: isOnline ? Colors.greenAccent : Colors.amber),
+            Icon(isOnline ? Icons.cloud_done : Icons.cloud_off, size: 12, color: statusColor),
             const SizedBox(width: 4),
             Text(
               isOnline ? tr('online_mode') : tr('offline_mode'),
-              style: TextStyle(fontSize: 10, color: isOnline ? Colors.greenAccent : Colors.amber, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 10, color: statusColor, fontWeight: FontWeight.bold),
             ),
             const SizedBox(width: 3),
-            Icon(Icons.swap_horiz, size: 11, color: isOnline ? Colors.greenAccent : Colors.amber),
+            Icon(Icons.swap_horiz, size: 11, color: statusColor),
           ],
         ),
       ),
@@ -277,6 +280,7 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
   }
 
   Future<void> _toggleOnlineOffline() async {
+    final tok = context.tokens;
     await _repository.toggleOnlineMode();
     await _filterResources();
     if (mounted) {
@@ -284,17 +288,17 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           duration: const Duration(seconds: 2),
-          backgroundColor: online ? const Color(0xFF10B981) : Colors.amber.shade900,
+          backgroundColor: online ? tok.success : tok.warning,
           content: Row(
             children: [
-              Icon(online ? Icons.cloud_done : Icons.cloud_off, color: Colors.white, size: 18),
+              Icon(online ? Icons.cloud_done : Icons.cloud_off, color: tok.buttonText, size: 18),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   online
                       ? 'Online Mode: All educational content & online providers active'
                       : 'Offline Mode: Showing downloaded & offline-ready content',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  style: TextStyle(fontWeight: FontWeight.bold, color: tok.buttonText),
                 ),
               ),
             ],
@@ -308,9 +312,9 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
   // TAB 1: EXPLORE / DISCOVER (Continue Learning + Recent Chapters + Catalog)
   // ═════════════════════════════════════════════════════════════════════════════
 
-  Widget _buildExploreTab(ThemeData theme) {
+  Widget _buildExploreTab(SemanticThemeTokens tok) {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator(color: Color(0xFF38BDF8)));
+      return Center(child: CircularProgressIndicator(color: tok.primary));
     }
 
     return ListView(
@@ -318,18 +322,18 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
       children: [
         // 1. CONTINUE LEARNING (Section 2)
         if (_continueLearning != null) ...[
-          _buildContinueLearningCard(_continueLearning!, theme),
+          _buildContinueLearningCard(_continueLearning!, tok),
           const SizedBox(height: 20),
         ],
 
         // 2. RECENT CHAPTERS (Section 3)
         if (_recentChapters.isNotEmpty) ...[
-          _buildRecentChaptersSection(_recentChapters, theme),
+          _buildRecentChaptersSection(_recentChapters, tok),
           const SizedBox(height: 24),
         ],
 
         // 3. SEARCH & FILTERS (Section 14)
-        _buildSearchAndFilters(theme),
+        _buildSearchAndFilters(tok),
         const SizedBox(height: 16),
 
         // 4. REAL EDUCATIONAL RESOURCES
@@ -338,7 +342,7 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
           children: [
             Text(
               '${tr("explore_courses")} (${_resources.length})',
-              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: tok.textPrimary),
             ),
             if (_selectedProvider != 'All' || _selectedSubject != 'All' || _downloadableOnly)
               TextButton(
@@ -352,7 +356,7 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
                   });
                   _filterResources();
                 },
-                child: const Text('Reset Filters', style: TextStyle(fontSize: 12)),
+                child: Text('Reset Filters', style: TextStyle(fontSize: 12, color: tok.primary)),
               ),
           ],
         ),
@@ -364,34 +368,31 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
             alignment: Alignment.center,
             child: Column(
               children: [
-                const Icon(Icons.search_off, size: 48, color: Colors.grey),
+                Icon(Icons.search_off, size: 48, color: tok.textMuted),
                 const SizedBox(height: 12),
-                Text(tr('no_results'), style: const TextStyle(color: Colors.grey)),
+                Text(tr('no_results'), style: TextStyle(color: tok.textMuted)),
               ],
             ),
           )
         else
-          ..._resources.map((res) => _buildResourceCard(res, theme)),
+          ..._resources.map((res) => _buildResourceCard(res, tok)),
       ],
     );
   }
 
   // ──── Continue Learning Card (Requirement #2) ────
-  Widget _buildContinueLearningCard(RecentChapter recent, ThemeData theme) {
+  Widget _buildContinueLearningCard(RecentChapter recent, SemanticThemeTokens tok) {
     final pct = (recent.progress * 100).toInt();
-    final isDark = theme.brightness == Brightness.dark;
     return Card(
-      elevation: isDark ? 4 : 2,
+      elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      color: isDark ? const Color(0xFF1E293B) : Colors.white,
+      color: tok.cardBackground,
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFF38BDF8).withValues(alpha: isDark ? 0.3 : 0.4)),
+          border: Border.all(color: tok.border),
           gradient: LinearGradient(
-            colors: isDark
-                ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
-                : [Colors.white, const Color(0xFFF0F9FF)],
+            colors: [tok.primary, tok.primaryPressed],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -405,10 +406,10 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF38BDF8).withValues(alpha: isDark ? 0.15 : 0.2),
+                    color: tok.buttonText.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.play_circle_fill, color: Color(0xFF0284C7), size: 22),
+                  child: Icon(Icons.play_circle_fill, color: tok.buttonText, size: 22),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -421,7 +422,7 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 1.1,
-                          color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0284C7),
+                          color: tok.buttonText,
                         ),
                       ),
                       Text(
@@ -429,7 +430,7 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : const Color(0xFF0F172A),
+                          color: tok.buttonText,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -440,14 +441,14 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05),
+                    color: tok.buttonText.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     recent.provider,
                     style: TextStyle(
                       fontSize: 11,
-                      color: isDark ? Colors.grey.shade400 : const Color(0xFF475569),
+                      color: tok.buttonText,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -459,7 +460,7 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
               recent.chapterName,
               style: TextStyle(
                 fontSize: 14,
-                color: isDark ? Colors.white.withValues(alpha: 0.85) : const Color(0xFF334155),
+                color: tok.buttonText.withValues(alpha: 0.9),
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -473,8 +474,8 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
                     child: LinearProgressIndicator(
                       value: recent.progress,
                       minHeight: 6,
-                      backgroundColor: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.shade200,
-                      valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF38BDF8)),
+                      backgroundColor: tok.buttonText.withValues(alpha: 0.2),
+                      valueColor: AlwaysStoppedAnimation<Color>(tok.buttonText),
                     ),
                   ),
                 ),
@@ -484,7 +485,7 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
-                    color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0284C7),
+                    color: tok.buttonText,
                   ),
                 ),
               ],
@@ -494,11 +495,11 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () => _resumeChapter(recent),
-                icon: const Icon(Icons.arrow_forward, size: 16),
-                label: const Text('Continue'),
+                icon: Icon(Icons.arrow_forward, size: 16, color: tok.primary),
+                label: Text('Continue', style: TextStyle(color: tok.primary, fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF38BDF8),
-                  foregroundColor: const Color(0xFF0F172A),
+                  backgroundColor: tok.buttonText,
+                  foregroundColor: tok.primary,
                   padding: const EdgeInsets.symmetric(vertical: 10),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
@@ -511,18 +512,17 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
   }
 
   // ──── Recent Chapters Section (Requirement #3) ────
-  Widget _buildRecentChaptersSection(List<RecentChapter> recents, ThemeData theme) {
-    final isDark = theme.brightness == Brightness.dark;
+  Widget _buildRecentChaptersSection(List<RecentChapter> recents, SemanticThemeTokens tok) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            const Icon(Icons.history, size: 20, color: Color(0xFF38BDF8)),
+            Icon(Icons.history, size: 20, color: tok.primary),
             const SizedBox(width: 8),
             Text(
               tr('recent_chapters'),
-              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: tok.textPrimary),
             ),
           ],
         ),
@@ -539,11 +539,11 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
                 width: 210,
                 margin: const EdgeInsets.only(right: 12),
                 child: Card(
-                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                  elevation: isDark ? 2 : 1,
+                  color: tok.cardBackground,
+                  elevation: 1,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
-                    side: BorderSide(color: isDark ? Colors.white10 : const Color(0xFFE2E8F0)),
+                    side: BorderSide(color: tok.border),
                   ),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(14),
@@ -559,27 +559,27 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF38BDF8).withValues(alpha: 0.15),
+                                  color: tok.primary.withValues(alpha: 0.15),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
                                   r.provider,
                                   style: TextStyle(
                                     fontSize: 10,
-                                    color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0284C7),
+                                    color: tok.primary,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
                               ),
                               if (r.completed)
-                                const Icon(Icons.check_circle, size: 14, color: Color(0xFF10B981))
+                                Icon(Icons.check_circle, size: 14, color: tok.success)
                               else
                                 Text(
                                   '$pct%',
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
-                                    color: isDark ? Colors.grey : const Color(0xFF64748B),
+                                    color: tok.textSecondary,
                                   ),
                                 ),
                             ],
@@ -590,7 +590,7 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                              color: tok.textPrimary,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -600,7 +600,7 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
                             r.courseName,
                             style: TextStyle(
                               fontSize: 11,
-                              color: isDark ? Colors.grey.shade400 : const Color(0xFF64748B),
+                              color: tok.textSecondary,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -611,9 +611,9 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
                             child: LinearProgressIndicator(
                               value: r.progress,
                               minHeight: 4,
-                              backgroundColor: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.shade200,
+                              backgroundColor: tok.border,
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                r.completed ? const Color(0xFF10B981) : const Color(0xFF38BDF8),
+                                r.completed ? tok.success : tok.primary,
                               ),
                             ),
                           ),
@@ -631,7 +631,7 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
   }
 
   // ──── Search & Filter Bar (Requirement #14) ────
-  Widget _buildSearchAndFilters(ThemeData theme) {
+  Widget _buildSearchAndFilters(SemanticThemeTokens tok) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -639,12 +639,14 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
         TextField(
           controller: _searchCtrl,
           onChanged: (_) => _filterResources(),
+          style: TextStyle(color: tok.textPrimary),
           decoration: InputDecoration(
             hintText: 'Search courses, textbooks, lectures...',
-            prefixIcon: const Icon(Icons.search, color: Color(0xFF38BDF8)),
+            hintStyle: TextStyle(color: tok.textSecondary),
+            prefixIcon: Icon(Icons.search, color: tok.primary),
             suffixIcon: _searchCtrl.text.isNotEmpty
                 ? IconButton(
-                    icon: const Icon(Icons.clear, size: 18),
+                    icon: Icon(Icons.clear, size: 18, color: tok.textSecondary),
                     onPressed: () {
                       _searchCtrl.clear();
                       _filterResources();
@@ -652,9 +654,16 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
                   )
                 : null,
             filled: true,
-            fillColor: const Color(0xFF1E293B),
+            fillColor: tok.cardBackground,
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(color: tok.border),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(color: tok.primary, width: 1.5),
+            ),
           ),
         ),
         const SizedBox(height: 10),
@@ -677,16 +686,16 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
                     setState(() => _selectedProvider = p);
                     _filterResources();
                   },
-                  selectedColor: const Color(0xFF38BDF8).withValues(alpha: 0.2),
-                  checkmarkColor: const Color(0xFF38BDF8),
+                  selectedColor: tok.primary.withValues(alpha: 0.18),
+                  checkmarkColor: tok.primary,
                   labelStyle: TextStyle(
                     fontSize: 12,
                     fontWeight: sel ? FontWeight.bold : FontWeight.normal,
-                    color: sel ? const Color(0xFF38BDF8) : Colors.grey.shade300,
+                    color: sel ? tok.primary : tok.textSecondary,
                   ),
-                  backgroundColor: const Color(0xFF1E293B),
+                  backgroundColor: tok.cardBackground,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                  side: BorderSide(color: sel ? const Color(0xFF38BDF8) : Colors.grey.shade800),
+                  side: BorderSide(color: sel ? tok.primary : tok.border),
                 ),
               );
             },
@@ -698,37 +707,46 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
         Row(
           children: [
             FilterChip(
-              avatar: Icon(Icons.download, size: 14, color: _downloadableOnly ? const Color(0xFF10B981) : Colors.grey),
+              avatar: Icon(Icons.download, size: 14, color: _downloadableOnly ? tok.success : tok.textSecondary),
               label: Text(tr('downloadable_only')),
               selected: _downloadableOnly,
               onSelected: (val) {
                 setState(() => _downloadableOnly = val);
                 _filterResources();
               },
-              selectedColor: const Color(0xFF10B981).withValues(alpha: 0.2),
-              checkmarkColor: const Color(0xFF10B981),
+              selectedColor: tok.success.withValues(alpha: 0.18),
+              checkmarkColor: tok.success,
               labelStyle: TextStyle(
                 fontSize: 11,
-                color: _downloadableOnly ? const Color(0xFF10B981) : Colors.grey.shade400,
+                color: _downloadableOnly ? tok.success : tok.textSecondary,
               ),
-              backgroundColor: const Color(0xFF1E293B),
-              side: BorderSide(color: _downloadableOnly ? const Color(0xFF10B981) : Colors.grey.shade800),
+              backgroundColor: tok.cardBackground,
+              side: BorderSide(color: _downloadableOnly ? tok.success : tok.border),
             ),
             const SizedBox(width: 8),
-            DropdownButton<String>(
-              value: _selectedSubject,
-              underline: const SizedBox(),
-              dropdownColor: const Color(0xFF1E293B),
-              style: const TextStyle(fontSize: 12, color: Colors.white),
-              items: _subjectsList
-                  .map((s) => DropdownMenuItem(value: s, child: Text(s == 'All' ? tr('all_subjects') : s)))
-                  .toList(),
-              onChanged: (val) {
-                if (val != null) {
-                  setState(() => _selectedSubject = val);
-                  _filterResources();
-                }
-              },
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              decoration: BoxDecoration(
+                color: tok.cardBackground,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: tok.border),
+              ),
+              child: DropdownButton<String>(
+                value: _selectedSubject,
+                underline: const SizedBox(),
+                dropdownColor: tok.cardBackground,
+                style: TextStyle(fontSize: 12, color: tok.textPrimary),
+                icon: Icon(Icons.arrow_drop_down, color: tok.textSecondary),
+                items: _subjectsList
+                    .map((s) => DropdownMenuItem(value: s, child: Text(s == 'All' ? tr('all_subjects') : s)))
+                    .toList(),
+                onChanged: (val) {
+                  if (val != null) {
+                    setState(() => _selectedSubject = val);
+                    _filterResources();
+                  }
+                },
+              ),
             ),
           ],
         ),
@@ -737,7 +755,7 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
   }
 
   // ──── Resource Card ────
-  Widget _buildResourceCard(LearningResource resource, ThemeData theme) {
+  Widget _buildResourceCard(LearningResource resource, SemanticThemeTokens tok) {
     final isDownloaded = _downloadManager.isDownloaded(resource.id);
     final task = _downloadManager.getTask(resource.id);
     final isDownloading = task?.status == DownloadStatus.downloading || task?.status == DownloadStatus.queued;
@@ -745,8 +763,12 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      color: const Color(0xFF1E293B),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      color: tok.cardBackground,
+      elevation: 1,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: tok.border),
+      ),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: () => _openResourceDetail(resource),
@@ -763,14 +785,14 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: isDownloaded
-                            ? [const Color(0xFF10B981), const Color(0xFF059669)]
-                            : [const Color(0xFF38BDF8), const Color(0xFF0284C7)],
+                            ? [tok.success, tok.success.withValues(alpha: 0.8)]
+                            : [tok.primary, tok.primaryPressed],
                       ),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
                       resource.type == ResourceType.book ? Icons.menu_book : Icons.school,
-                      color: Colors.white,
+                      color: tok.buttonText,
                       size: 22,
                     ),
                   ),
@@ -781,18 +803,18 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
                       children: [
                         Text(
                           resource.title,
-                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: tok.textPrimary),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           'Source: ${resource.provider}',
-                          style: const TextStyle(fontSize: 11, color: Color(0xFF38BDF8), fontWeight: FontWeight.w600),
+                          style: TextStyle(fontSize: 11, color: tok.primary, fontWeight: FontWeight.w600),
                         ),
                         if (resource.instructorOrAuthor != null) ...[
                           const SizedBox(height: 2),
                           Text(
                             resource.instructorOrAuthor!,
-                            style: TextStyle(fontSize: 11, color: Colors.grey.shade400),
+                            style: TextStyle(fontSize: 11, color: tok.textSecondary),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -805,45 +827,45 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
               const SizedBox(height: 10),
               Text(
                 resource.description,
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade400, height: 1.4),
+                style: TextStyle(fontSize: 12, color: tok.textSecondary, height: 1.4),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 10),
               Row(
                 children: [
-                  _Badge(label: resource.subject, color: Colors.grey.shade700),
+                  _Badge(label: resource.subject, tok: tok),
                   const SizedBox(width: 6),
-                  _Badge(label: resource.level, color: Colors.grey.shade800),
+                  _Badge(label: resource.level, tok: tok),
                   const SizedBox(width: 6),
-                  _Badge(label: '${resource.lessons.length} lessons', color: Colors.grey.shade800),
+                  _Badge(label: '${resource.lessons.length} lessons', tok: tok),
                   const Spacer(),
                   if (isDownloaded)
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                        color: tok.success.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.4)),
+                        border: Border.all(color: tok.success.withValues(alpha: 0.4)),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.check_circle, size: 12, color: Color(0xFF10B981)),
+                          Icon(Icons.check_circle, size: 12, color: tok.success),
                           const SizedBox(width: 4),
                           Text(
                             tr('available_offline'),
-                            style: const TextStyle(fontSize: 10, color: Color(0xFF10B981), fontWeight: FontWeight.bold),
+                            style: TextStyle(fontSize: 10, color: tok.success, fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
                     )
                   else if (isDownloading)
-                    const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                    SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: tok.primary))
                   else if (resource.downloadable)
-                    const Icon(Icons.download_for_offline_outlined, size: 20, color: Color(0xFF38BDF8))
+                    Icon(Icons.download_for_offline_outlined, size: 20, color: tok.primary)
                   else
-                    const Icon(Icons.open_in_new, size: 18, color: Colors.grey),
+                    Icon(Icons.open_in_new, size: 18, color: tok.textSecondary),
                 ],
               ),
               if (progress > 0) ...[
@@ -853,8 +875,8 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
                   child: LinearProgressIndicator(
                     value: progress,
                     minHeight: 4,
-                    backgroundColor: Colors.white.withValues(alpha: 0.1),
-                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF38BDF8)),
+                    backgroundColor: tok.border,
+                    valueColor: AlwaysStoppedAnimation<Color>(tok.primary),
                   ),
                 ),
               ],
@@ -869,12 +891,12 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
   // TAB 2: MY LIBRARY (OFFLINE-READY RESOURCES)
   // ═════════════════════════════════════════════════════════════════════════════
 
-  Widget _buildLibraryTab(ThemeData theme) {
+  Widget _buildLibraryTab(SemanticThemeTokens tok) {
     return FutureBuilder<List<LearningResource>>(
       future: _repository.getDownloadedResources(),
       builder: (ctx, snap) {
         if (!snap.hasData) {
-          return const Center(child: CircularProgressIndicator(color: Color(0xFF38BDF8)));
+          return Center(child: CircularProgressIndicator(color: tok.primary));
         }
         final downloaded = snap.data!;
 
@@ -885,12 +907,12 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.cloud_download_outlined, size: 64, color: Colors.grey),
+                  Icon(Icons.cloud_download_outlined, size: 64, color: tok.textSecondary),
                   const SizedBox(height: 16),
                   Text(
                     tr('no_downloaded'),
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.grey, fontSize: 15),
+                    style: TextStyle(color: tok.textSecondary, fontSize: 15),
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
@@ -898,8 +920,8 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
                     icon: const Icon(Icons.explore),
                     label: Text(tr('explore_courses')),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF38BDF8),
-                      foregroundColor: const Color(0xFF0F172A),
+                      backgroundColor: tok.primary,
+                      foregroundColor: tok.buttonText,
                     ),
                   ),
                 ],
@@ -916,21 +938,22 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
               children: [
                 Text(
                   '${tr("my_library")} (${downloaded.length})',
-                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: tok.textPrimary),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                    color: tok.success.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: tok.success.withValues(alpha: 0.3)),
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
-                      Icon(Icons.offline_bolt, size: 14, color: Color(0xFF10B981)),
-                      SizedBox(width: 4),
+                      Icon(Icons.offline_bolt, size: 14, color: tok.success),
+                      const SizedBox(width: 4),
                       Text(
                         '100% Offline Ready',
-                        style: TextStyle(fontSize: 11, color: Color(0xFF10B981), fontWeight: FontWeight.bold),
+                        style: TextStyle(fontSize: 11, color: tok.success, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
@@ -938,7 +961,7 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
               ],
             ),
             const SizedBox(height: 12),
-            ...downloaded.map((res) => _buildResourceCard(res, theme)),
+            ...downloaded.map((res) => _buildResourceCard(res, tok)),
           ],
         );
       },
@@ -949,7 +972,7 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
   // TAB 3: DOWNLOADS MANAGER (Section 12 & 19)
   // ═════════════════════════════════════════════════════════════════════════════
 
-  Widget _buildDownloadsTab(ThemeData theme) {
+  Widget _buildDownloadsTab(SemanticThemeTokens tok) {
     final active = _downloadManager.activeDownloads;
     final completed = _downloadManager.completedDownloads;
     final totalUsed = _downloadManager.formatBytes(_downloadManager.getTotalStorageUsedBytes());
@@ -959,28 +982,32 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
       children: [
         // Storage Header
         Card(
-          color: const Color(0xFF1E293B),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          color: tok.cardBackground,
+          elevation: 1,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: BorderSide(color: tok.border),
+          ),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                const Icon(Icons.storage, color: Color(0xFF38BDF8), size: 24),
+                Icon(Icons.storage, color: tok.primary, size: 24),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(tr('storage_used'), style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                      Text(totalUsed, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                      Text(tr('storage_used'), style: TextStyle(fontSize: 12, color: tok.textSecondary)),
+                      Text(totalUsed, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: tok.textPrimary)),
                     ],
                   ),
                 ),
                 if (completed.isNotEmpty)
                   TextButton.icon(
                     onPressed: () => _confirmClearDownloads(),
-                    icon: const Icon(Icons.delete_outline, size: 16, color: Colors.redAccent),
-                    label: const Text('Clear', style: TextStyle(color: Colors.redAccent, fontSize: 12)),
+                    icon: Icon(Icons.delete_outline, size: 16, color: tok.error),
+                    label: Text('Clear', style: TextStyle(color: tok.error, fontSize: 12)),
                   ),
               ],
             ),
@@ -990,40 +1017,44 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
 
         // Active Downloads
         if (active.isNotEmpty) ...[
-          Text('Downloading (${active.length})', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+          Text('Downloading (${active.length})', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: tok.textPrimary)),
           const SizedBox(height: 10),
-          ...active.map((task) => _buildActiveDownloadTile(task, theme)),
+          ...active.map((task) => _buildActiveDownloadTile(task, tok)),
           const SizedBox(height: 20),
         ],
 
         // Downloaded
-        Text('Downloaded (${completed.length})', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+        Text('Downloaded (${completed.length})', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: tok.textPrimary)),
         const SizedBox(height: 10),
         if (completed.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 20),
-            child: Center(child: Text('No downloaded files yet.', style: TextStyle(color: Colors.grey))),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Center(child: Text('No downloaded files yet.', style: TextStyle(color: tok.textSecondary))),
           )
         else
-          ...completed.map((task) => _buildCompletedDownloadTile(task, theme)),
+          ...completed.map((task) => _buildCompletedDownloadTile(task, tok)),
 
         const SizedBox(height: 24),
 
         // Download Settings (Requirement #19)
-        _buildDownloadSettingsCard(theme),
+        _buildDownloadSettingsCard(tok),
       ],
     );
   }
 
-  Widget _buildActiveDownloadTile(DownloadTask task, ThemeData theme) {
+  Widget _buildActiveDownloadTile(DownloadTask task, SemanticThemeTokens tok) {
     final downloadedStr = _downloadManager.formatBytes(task.downloadedBytes);
     final totalStr = _downloadManager.formatBytes(task.totalBytes);
     final isPaused = task.status == DownloadStatus.paused;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
-      color: const Color(0xFF1E293B),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: tok.cardBackground,
+      elevation: 1,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: tok.border),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -1035,14 +1066,14 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(task.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
+                      Text(task.title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: tok.textPrimary)),
                       Text('${task.provider} • ${task.percentage.toStringAsFixed(0)}%',
-                          style: const TextStyle(fontSize: 11, color: Color(0xFF38BDF8))),
+                          style: TextStyle(fontSize: 11, color: tok.primary)),
                     ],
                   ),
                 ),
                 IconButton(
-                  icon: Icon(isPaused ? Icons.play_arrow : Icons.pause, size: 20, color: const Color(0xFF38BDF8)),
+                  icon: Icon(isPaused ? Icons.play_arrow : Icons.pause, size: 20, color: tok.primary),
                   onPressed: () {
                     if (isPaused) {
                       _repository.getResource(task.resourceId).then((r) {
@@ -1054,7 +1085,7 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
                   },
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close, size: 20, color: Colors.grey),
+                  icon: Icon(Icons.close, size: 20, color: tok.textSecondary),
                   onPressed: () => _downloadManager.cancelDownload(task.resourceId),
                 ),
               ],
@@ -1065,32 +1096,36 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
               child: LinearProgressIndicator(
                 value: task.totalBytes > 0 ? (task.downloadedBytes / task.totalBytes).clamp(0.0, 1.0) : null,
                 minHeight: 6,
-                backgroundColor: Colors.white.withValues(alpha: 0.1),
-                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF38BDF8)),
+                backgroundColor: tok.border,
+                valueColor: AlwaysStoppedAnimation<Color>(tok.primary),
               ),
             ),
             const SizedBox(height: 4),
-            Text('$downloadedStr / $totalStr', style: const TextStyle(fontSize: 10, color: Colors.grey)),
+            Text('$downloadedStr / $totalStr', style: TextStyle(fontSize: 10, color: tok.textSecondary)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildCompletedDownloadTile(DownloadTask task, ThemeData theme) {
+  Widget _buildCompletedDownloadTile(DownloadTask task, SemanticThemeTokens tok) {
     final sizeStr = _downloadManager.formatBytes(task.downloadedBytes);
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      color: const Color(0xFF1E293B),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: tok.cardBackground,
+      elevation: 1,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: tok.border),
+      ),
       child: ListTile(
         dense: true,
-        leading: const Icon(Icons.check_circle, color: Color(0xFF10B981)),
-        title: Text(task.title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.white)),
+        leading: Icon(Icons.check_circle, color: tok.success),
+        title: Text(task.title, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: tok.textPrimary)),
         subtitle: Text('${task.provider} • $sizeStr • Available Offline',
-            style: TextStyle(fontSize: 11, color: Colors.grey.shade400)),
+            style: TextStyle(fontSize: 11, color: tok.textSecondary)),
         trailing: IconButton(
-          icon: const Icon(Icons.delete_outline, size: 18, color: Colors.grey),
+          icon: Icon(Icons.delete_outline, size: 18, color: tok.textSecondary),
           onPressed: () => _downloadManager.deleteDownload(task.resourceId),
         ),
         onTap: () async {
@@ -1103,35 +1138,42 @@ class _CurriculumScreenState extends State<CurriculumScreen> with SingleTickerPr
     );
   }
 
-  Widget _buildDownloadSettingsCard(ThemeData theme) {
+  Widget _buildDownloadSettingsCard(SemanticThemeTokens tok) {
     return Card(
-      color: const Color(0xFF1E293B),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      color: tok.cardBackground,
+      elevation: 1,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: tok.border),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(tr('download_settings'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-            const Divider(height: 20),
+            Text(tr('download_settings'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: tok.textPrimary)),
+            Divider(height: 20, color: tok.border),
             SwitchListTile(
               dense: true,
               contentPadding: EdgeInsets.zero,
-              title: Text(tr('wifi_only'), style: const TextStyle(fontSize: 13)),
+              activeThumbColor: tok.primary,
+              title: Text(tr('wifi_only'), style: TextStyle(fontSize: 13, color: tok.textPrimary)),
               value: _downloadManager.wifiOnly,
               onChanged: (v) => _downloadManager.setWifiOnly(v),
             ),
             SwitchListTile(
               dense: true,
               contentPadding: EdgeInsets.zero,
-              title: Text(tr('ask_large'), style: const TextStyle(fontSize: 13)),
+              activeThumbColor: tok.primary,
+              title: Text(tr('ask_large'), style: TextStyle(fontSize: 13, color: tok.textPrimary)),
               value: _downloadManager.askBeforeLargeDownloads,
               onChanged: (v) => _downloadManager.setAskBeforeLargeDownloads(v),
             ),
             SwitchListTile(
               dense: true,
               contentPadding: EdgeInsets.zero,
-              title: Text(tr('auto_next'), style: const TextStyle(fontSize: 13)),
+              activeThumbColor: tok.primary,
+              title: Text(tr('auto_next'), style: TextStyle(fontSize: 13, color: tok.textPrimary)),
               value: _downloadManager.autoDownloadNextLesson,
               onChanged: (v) => _downloadManager.setAutoDownloadNextLesson(v),
             ),
@@ -1220,7 +1262,7 @@ class ResourceDetailScreen extends StatefulWidget {
 class _ResourceDetailScreenState extends State<ResourceDetailScreen> {
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final tok = context.tokens;
     final res = widget.resource;
     final isDownloaded = widget.downloadManager.isDownloaded(res.id);
     final task = widget.downloadManager.getTask(res.id);
@@ -1229,10 +1271,10 @@ class _ResourceDetailScreenState extends State<ResourceDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(res.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        title: Text(res.title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: tok.textPrimary)),
         actions: [
           IconButton(
-            icon: const Icon(Icons.share_outlined),
+            icon: Icon(Icons.share_outlined, color: tok.textPrimary),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Sharing link: ${res.officialUrl}')),
@@ -1246,8 +1288,12 @@ class _ResourceDetailScreenState extends State<ResourceDetailScreen> {
         children: [
           // Header info
           Card(
-            color: const Color(0xFF1E293B),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            color: tok.cardBackground,
+            elevation: 1,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(color: tok.border),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -1259,11 +1305,11 @@ class _ResourceDetailScreenState extends State<ResourceDetailScreen> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(colors: [Color(0xFF38BDF8), Color(0xFF0284C7)]),
+                          gradient: LinearGradient(colors: [tok.primary, tok.primaryPressed]),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(res.type == ResourceType.book ? Icons.menu_book : Icons.school,
-                            color: Colors.white, size: 28),
+                            color: tok.buttonText, size: 28),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
@@ -1271,15 +1317,15 @@ class _ResourceDetailScreenState extends State<ResourceDetailScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(res.title,
-                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: tok.textPrimary)),
                             const SizedBox(height: 4),
                             Text('Source: ${res.provider}',
-                                style: const TextStyle(
-                                    fontSize: 13, color: Color(0xFF38BDF8), fontWeight: FontWeight.w600)),
+                                style: TextStyle(
+                                    fontSize: 13, color: tok.primary, fontWeight: FontWeight.w600)),
                             if (res.institution != null) ...[
                               const SizedBox(height: 2),
                               Text(res.institution!,
-                                  style: TextStyle(fontSize: 12, color: Colors.grey.shade400)),
+                                  style: TextStyle(fontSize: 12, color: tok.textSecondary)),
                             ],
                           ],
                         ),
@@ -1287,18 +1333,18 @@ class _ResourceDetailScreenState extends State<ResourceDetailScreen> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  Text(res.description, style: const TextStyle(fontSize: 13, height: 1.5, color: Colors.white70)),
+                  Text(res.description, style: TextStyle(fontSize: 13, height: 1.5, color: tok.textSecondary)),
                   const SizedBox(height: 12),
                   Wrap(
                     spacing: 8,
                     runSpacing: 6,
                     children: [
-                      _Badge(label: res.subject, color: Colors.grey.shade700),
-                      _Badge(label: res.level, color: Colors.grey.shade800),
-                      if (res.license != null) _Badge(label: res.license!, color: Colors.indigo.shade900),
+                      _Badge(label: res.subject, tok: tok),
+                      _Badge(label: res.level, tok: tok),
+                      if (res.license != null) _Badge(label: res.license!, tok: tok),
                     ],
                   ),
-                  const Divider(height: 24),
+                  Divider(height: 24, color: tok.border),
 
                   // Open Original Course Button
                   OutlinedButton.icon(
@@ -1306,8 +1352,8 @@ class _ResourceDetailScreenState extends State<ResourceDetailScreen> {
                     icon: const Icon(Icons.open_in_browser, size: 16),
                     label: Text(tr('open_original_course')),
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFF38BDF8)),
-                      foregroundColor: const Color(0xFF38BDF8),
+                      side: BorderSide(color: tok.primary),
+                      foregroundColor: tok.primary,
                       minimumSize: const Size(double.infinity, 40),
                     ),
                   ),
@@ -1318,7 +1364,7 @@ class _ResourceDetailScreenState extends State<ResourceDetailScreen> {
           const SizedBox(height: 16),
 
           // Download / Offline Status Card (Section 9 & 10)
-          _buildDownloadCard(res, isDownloaded, isDownloading, task),
+          _buildDownloadCard(res, isDownloaded, isDownloading, task, tok),
           const SizedBox(height: 20),
 
           // Chapters & Lessons List
@@ -1327,12 +1373,12 @@ class _ResourceDetailScreenState extends State<ResourceDetailScreen> {
             children: [
               Text(
                 'Chapters (${res.lessons.length})',
-                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: tok.textPrimary),
               ),
               if (courseProgress > 0)
                 Text(
                   '${(courseProgress * 100).toInt()}% completed',
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF38BDF8)),
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: tok.primary),
                 ),
             ],
           ),
@@ -1345,23 +1391,27 @@ class _ResourceDetailScreenState extends State<ResourceDetailScreen> {
 
             return Card(
               margin: const EdgeInsets.only(bottom: 8),
-              color: const Color(0xFF1E293B),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              color: tok.cardBackground,
+              elevation: 1,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(color: tok.border),
+              ),
               child: ListTile(
                 leading: CircleAvatar(
                   radius: 14,
-                  backgroundColor: isDone ? const Color(0xFF10B981) : Colors.grey.shade800,
+                  backgroundColor: isDone ? tok.success : tok.border,
                   child: isDone
-                      ? const Icon(Icons.check, size: 14, color: Colors.white)
-                      : Text('${idx + 1}', style: const TextStyle(fontSize: 11, color: Colors.white)),
+                      ? Icon(Icons.check, size: 14, color: tok.buttonText)
+                      : Text('${idx + 1}', style: TextStyle(fontSize: 11, color: tok.textPrimary)),
                 ),
-                title: Text(lesson.title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white)),
+                title: Text(lesson.title, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: tok.textPrimary)),
                 subtitle: lesson.durationMinutes != null
-                    ? Text('${lesson.durationMinutes} min', style: TextStyle(fontSize: 11, color: Colors.grey.shade400))
+                    ? Text('${lesson.durationMinutes} min', style: TextStyle(fontSize: 11, color: tok.textSecondary))
                     : null,
                 trailing: isDownloaded
-                    ? const Icon(Icons.offline_pin, size: 18, color: Color(0xFF10B981))
-                    : const Icon(Icons.arrow_forward_ios, size: 12, color: Colors.grey),
+                    ? Icon(Icons.offline_pin, size: 18, color: tok.success)
+                    : Icon(Icons.arrow_forward_ios, size: 12, color: tok.textSecondary),
                 onTap: () => _openLessonReader(idx),
               ),
             );
@@ -1371,34 +1421,35 @@ class _ResourceDetailScreenState extends State<ResourceDetailScreen> {
     );
   }
 
-  Widget _buildDownloadCard(LearningResource res, bool isDownloaded, bool isDownloading, DownloadTask? task) {
+  Widget _buildDownloadCard(LearningResource res, bool isDownloaded, bool isDownloading, DownloadTask? task, SemanticThemeTokens tok) {
     if (isDownloaded) {
       final sizeStr = task != null ? widget.downloadManager.formatBytes(task.downloadedBytes) : '';
       return Card(
-        color: const Color(0xFF10B981).withValues(alpha: 0.12),
+        color: tok.success.withValues(alpha: 0.12),
+        elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(14),
-          side: const BorderSide(color: Color(0xFF10B981)),
+          side: BorderSide(color: tok.success.withValues(alpha: 0.4)),
         ),
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Row(
             children: [
-              const Icon(Icons.offline_pin, color: Color(0xFF10B981), size: 28),
+              Icon(Icons.offline_pin, color: tok.success, size: 28),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(tr('available_offline'),
-                        style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF10B981))),
+                        style: TextStyle(fontWeight: FontWeight.bold, color: tok.success)),
                     Text('Ready for airplane mode • $sizeStr',
-                        style: const TextStyle(fontSize: 11, color: Colors.white70)),
+                        style: TextStyle(fontSize: 11, color: tok.textSecondary)),
                   ],
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                icon: Icon(Icons.delete_outline, color: tok.error),
                 onPressed: () async {
                   await widget.downloadManager.deleteDownload(res.id);
                   setState(() {});
@@ -1414,8 +1465,12 @@ class _ResourceDetailScreenState extends State<ResourceDetailScreen> {
     if (isDownloading) {
       final pct = task?.percentage ?? 0;
       return Card(
-        color: const Color(0xFF1E293B),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        color: tok.cardBackground,
+        elevation: 1,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(color: tok.border),
+        ),
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Column(
@@ -1425,10 +1480,10 @@ class _ResourceDetailScreenState extends State<ResourceDetailScreen> {
                 children: [
                   Expanded(
                     child: Text('Downloading: ${pct.toStringAsFixed(0)}%',
-                        style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF38BDF8))),
+                        style: TextStyle(fontWeight: FontWeight.bold, color: tok.primary)),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, size: 18),
+                    icon: Icon(Icons.close, size: 18, color: tok.textSecondary),
                     onPressed: () {
                       widget.downloadManager.cancelDownload(res.id);
                       setState(() {});
@@ -1442,8 +1497,8 @@ class _ResourceDetailScreenState extends State<ResourceDetailScreen> {
                 child: LinearProgressIndicator(
                   value: (pct / 100).clamp(0.0, 1.0),
                   minHeight: 6,
-                  backgroundColor: Colors.white10,
-                  valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF38BDF8)),
+                  backgroundColor: tok.border,
+                  valueColor: AlwaysStoppedAnimation<Color>(tok.primary),
                 ),
               ),
             ],
@@ -1454,25 +1509,29 @@ class _ResourceDetailScreenState extends State<ResourceDetailScreen> {
 
     if (res.downloadable) {
       return Card(
-        color: const Color(0xFF1E293B),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        color: tok.cardBackground,
+        elevation: 1,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(color: tok.border),
+        ),
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Row(
             children: [
-              const Icon(Icons.download_for_offline, color: Color(0xFF38BDF8), size: 28),
+              Icon(Icons.download_for_offline, color: tok.primary, size: 28),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Download for Offline Use',
-                        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                    Text('Download for Offline Use',
+                        style: TextStyle(fontWeight: FontWeight.bold, color: tok.textPrimary)),
                     Text(
                       res.fileSizeBytes != null
                           ? 'Permitted OER package • ${widget.downloadManager.formatBytes(res.fileSizeBytes!)}'
                           : 'Permitted OER package',
-                      style: const TextStyle(fontSize: 11, color: Colors.grey),
+                      style: TextStyle(fontSize: 11, color: tok.textSecondary),
                     ),
                   ],
                 ),
@@ -1492,8 +1551,8 @@ class _ResourceDetailScreenState extends State<ResourceDetailScreen> {
                 icon: const Icon(Icons.download, size: 16),
                 label: const Text('Download'),
                 style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF38BDF8),
-                  foregroundColor: const Color(0xFF0F172A),
+                  backgroundColor: tok.primary,
+                  foregroundColor: tok.buttonText,
                 ),
               ),
             ],
@@ -1504,33 +1563,34 @@ class _ResourceDetailScreenState extends State<ResourceDetailScreen> {
 
     // Not downloadable (Rule #9 & #17)
     return Card(
-      color: Colors.amber.shade900.withValues(alpha: 0.15),
+      color: tok.warning.withValues(alpha: 0.15),
+      elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
-        side: BorderSide(color: Colors.amber.withValues(alpha: 0.3)),
+        side: BorderSide(color: tok.warning.withValues(alpha: 0.3)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Row(
           children: [
-            const Icon(Icons.info_outline, color: Colors.amber, size: 24),
+            Icon(Icons.info_outline, color: tok.warning, size: 24),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(tr('available_online'), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.amber)),
+                  Text(tr('available_online'), style: TextStyle(fontWeight: FontWeight.bold, color: tok.warning)),
                   const SizedBox(height: 2),
-                  const Text('This resource must be accessed from the original provider.',
-                      style: TextStyle(fontSize: 11, color: Colors.white70)),
+                  Text('This resource must be accessed from the original provider.',
+                      style: TextStyle(fontSize: 11, color: tok.textSecondary)),
                 ],
               ),
             ),
             OutlinedButton(
               onPressed: () => _launchUrl(res.officialUrl),
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Colors.amber),
-                foregroundColor: Colors.amber,
+                side: BorderSide(color: tok.warning),
+                foregroundColor: tok.warning,
               ),
               child: Text(tr('open_resource'), style: const TextStyle(fontSize: 12)),
             ),
@@ -1631,6 +1691,7 @@ class _ChapterReaderScreenState extends State<ChapterReaderScreen> {
     if (_lessons.isEmpty) return;
     final cur = _lessons[_currentIndex];
     final wasDone = UserScopedStore.done(cur.id);
+    final tok = context.tokens;
 
     if (wasDone) {
       await ProgressService().markLessonIncomplete(
@@ -1670,7 +1731,7 @@ class _ChapterReaderScreenState extends State<ChapterReaderScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Completed "${cur.title}"!'),
-            backgroundColor: const Color(0xFF10B981),
+            backgroundColor: tok.success,
             duration: const Duration(seconds: 2),
           ),
         );
@@ -1703,17 +1764,17 @@ class _ChapterReaderScreenState extends State<ChapterReaderScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tok = context.tokens;
+
     if (_lessons.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: Text(widget.resource.title)),
-        body: Center(child: Text(tr('no_lessons_available'))),
+        appBar: AppBar(title: Text(widget.resource.title, style: TextStyle(color: tok.textPrimary))),
+        body: Center(child: Text(tr('no_lessons_available'), style: TextStyle(color: tok.textSecondary))),
       );
     }
 
     final cur = _lessons[_currentIndex];
     final isDone = UserScopedStore.done(cur.id);
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return ValueListenableBuilder<String>(
       valueListenable: appLang,
@@ -1735,25 +1796,24 @@ class _ChapterReaderScreenState extends State<ChapterReaderScreen> {
               children: [
                 Text(
                   displayTitle,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: tok.textPrimary),
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   '${widget.resource.provider} • Chapter ${_currentIndex + 1} of ${_lessons.length}',
-                  style: TextStyle(fontSize: 11, color: isDark ? Colors.grey.shade400 : const Color(0xFF64748B)),
+                  style: TextStyle(fontSize: 11, color: tok.textSecondary),
                 ),
               ],
             ),
             actions: [
               // Language Switcher Toggle
               TextButton.icon(
-                icon: const Icon(Icons.translate, size: 16),
+                icon: Icon(Icons.translate, size: 16, color: tok.primary),
                 label: Text(
                   currentLang == 'hi' ? 'हिंदी' : 'English',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: tok.primary),
                 ),
                 style: TextButton.styleFrom(
-                  foregroundColor: const Color(0xFF38BDF8),
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                 ),
                 onPressed: () {
@@ -1764,7 +1824,7 @@ class _ChapterReaderScreenState extends State<ChapterReaderScreen> {
               // Font size toggle
               IconButton(
                 tooltip: 'Adjust text size',
-                icon: const Icon(Icons.format_size, size: 20),
+                icon: Icon(Icons.format_size, size: 20, color: tok.textPrimary),
                 onPressed: () {
                   setState(() {
                     if (_fontSize == 15.0) {
@@ -1780,7 +1840,7 @@ class _ChapterReaderScreenState extends State<ChapterReaderScreen> {
               // Ask Mentor quick button
               IconButton(
                 tooltip: 'Ask Digital Mentor',
-                icon: const Icon(Icons.psychology, color: Color(0xFF38BDF8)),
+                icon: Icon(Icons.psychology, color: tok.primary),
                 onPressed: () => _askMentor(displayTitle),
               ),
             ],
@@ -1791,8 +1851,8 @@ class _ChapterReaderScreenState extends State<ChapterReaderScreen> {
               LinearProgressIndicator(
                 value: ((_currentIndex + 1) / _lessons.length).clamp(0.0, 1.0),
                 minHeight: 3,
-                backgroundColor: isDark ? Colors.white10 : Colors.grey.shade200,
-                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF38BDF8)),
+                backgroundColor: tok.border,
+                valueColor: AlwaysStoppedAnimation<Color>(tok.primary),
               ),
 
               // Lesson Content Area
@@ -1806,18 +1866,9 @@ class _ChapterReaderScreenState extends State<ChapterReaderScreen> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                          color: tok.cardBackground,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
-                              blurRadius: 10,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
+                          border: Border.all(color: tok.border),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1827,14 +1878,14 @@ class _ChapterReaderScreenState extends State<ChapterReaderScreen> {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF38BDF8).withValues(alpha: 0.15),
+                                    color: tok.primary.withValues(alpha: 0.15),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(
                                     'CHAPTER ${_currentIndex + 1} OF ${_lessons.length}',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 11,
-                                      color: Color(0xFF38BDF8),
+                                      color: tok.primary,
                                       fontWeight: FontWeight.bold,
                                       letterSpacing: 0.5,
                                     ),
@@ -1842,13 +1893,13 @@ class _ChapterReaderScreenState extends State<ChapterReaderScreen> {
                                 ),
                                 if (cur.durationMinutes != null) ...[
                                   const SizedBox(width: 8),
-                                  Icon(Icons.schedule, size: 14, color: isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                                  Icon(Icons.schedule, size: 14, color: tok.textSecondary),
                                   const SizedBox(width: 4),
                                   Text(
                                     '${cur.durationMinutes} min read',
                                     style: TextStyle(
                                       fontSize: 11,
-                                      color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                                      color: tok.textSecondary,
                                     ),
                                   ),
                                 ],
@@ -1858,20 +1909,20 @@ class _ChapterReaderScreenState extends State<ChapterReaderScreen> {
                                   icon: Icon(
                                     isDone ? Icons.check_circle : Icons.radio_button_unchecked,
                                     size: 16,
-                                    color: isDone ? const Color(0xFF10B981) : (isDark ? Colors.grey : const Color(0xFF64748B)),
+                                    color: isDone ? tok.success : tok.textSecondary,
                                   ),
                                   label: Text(
                                     isDone ? tr('completed') : tr('mark_complete'),
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
-                                      color: isDone ? const Color(0xFF10B981) : (isDark ? Colors.white : const Color(0xFF0F172A)),
+                                      color: isDone ? tok.success : tok.textPrimary,
                                     ),
                                   ),
                                   style: FilledButton.styleFrom(
                                     backgroundColor: isDone
-                                        ? const Color(0xFF10B981).withAlpha(38)
-                                        : (isDark ? Colors.white12 : const Color(0xFFF1F5F9)),
+                                        ? tok.success.withValues(alpha: 0.15)
+                                        : tok.chipBackground,
                                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                   ),
                                 ),
@@ -1883,7 +1934,7 @@ class _ChapterReaderScreenState extends State<ChapterReaderScreen> {
                               style: TextStyle(
                                 fontSize: _fontSize + 4,
                                 fontWeight: FontWeight.bold,
-                                color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                color: tok.textPrimary,
                               ),
                             ),
                             // Translation Source Attribution Badge
@@ -1892,23 +1943,23 @@ class _ChapterReaderScreenState extends State<ChapterReaderScreen> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF6366F1).withValues(alpha: 0.15),
+                                  color: tok.secondaryAccent.withValues(alpha: 0.15),
                                   borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.35)),
+                                  border: Border.all(color: tok.secondaryAccent.withValues(alpha: 0.35)),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Icon(Icons.verified, size: 13, color: Color(0xFF818CF8)),
+                                    Icon(Icons.verified, size: 13, color: tok.secondaryAccent),
                                     const SizedBox(width: 6),
                                     Text(
                                       translation.translationSource == 'translated_for_gramvidya'
                                           ? 'Translated for GramVidya • Hindi'
                                           : 'Hindi Content (Official / Reviewed)',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w600,
-                                        color: Color(0xFF818CF8),
+                                        color: tok.secondaryAccent,
                                       ),
                                     ),
                                   ],
@@ -1927,20 +1978,15 @@ class _ChapterReaderScreenState extends State<ChapterReaderScreen> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                           decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                const Color(0xFF38BDF8).withAlpha(38),
-                                const Color(0xFF6366F1).withAlpha(38),
-                              ],
-                            ),
+                            color: tok.primary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: const Color(0xFF38BDF8).withAlpha(77),
+                              color: tok.primary.withValues(alpha: 0.3),
                             ),
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.auto_awesome, color: Color(0xFF38BDF8), size: 18),
+                              Icon(Icons.auto_awesome, color: tok.primary, size: 18),
                               const SizedBox(width: 10),
                               Expanded(
                                 child: Text(
@@ -1949,12 +1995,12 @@ class _ChapterReaderScreenState extends State<ChapterReaderScreen> {
                                       : 'Have doubts about this lesson? Ask your AI Digital Mentor for guidance.',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                    color: tok.textPrimary,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ),
-                              const Icon(Icons.arrow_forward_ios, size: 12, color: Color(0xFF38BDF8)),
+                              Icon(Icons.arrow_forward_ios, size: 12, color: tok.primary),
                             ],
                           ),
                         ),
@@ -1965,7 +2011,7 @@ class _ChapterReaderScreenState extends State<ChapterReaderScreen> {
                       _RichLessonReader(
                         content: displayContent,
                         fontSize: _fontSize,
-                        isDark: isDark,
+                        tok: tok,
                       ),
 
                       // External Link if present
@@ -1982,8 +2028,8 @@ class _ChapterReaderScreenState extends State<ChapterReaderScreen> {
                             icon: const Icon(Icons.open_in_new, size: 16),
                             label: Text('Open on ${widget.resource.provider}'),
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFF38BDF8),
-                              side: const BorderSide(color: Color(0xFF38BDF8)),
+                              foregroundColor: tok.primary,
+                              side: BorderSide(color: tok.primary),
                               minimumSize: const Size(double.infinity, 44),
                             ),
                           ),
@@ -1998,11 +2044,9 @@ class _ChapterReaderScreenState extends State<ChapterReaderScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                  color: tok.cardBackground,
                   border: Border(
-                    top: BorderSide(
-                      color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
-                    ),
+                    top: BorderSide(color: tok.border),
                   ),
                 ),
                 child: Row(
@@ -2016,7 +2060,7 @@ class _ChapterReaderScreenState extends State<ChapterReaderScreen> {
                     Text(
                       '${_currentIndex + 1} / ${_lessons.length}',
                       style: TextStyle(
-                        color: isDark ? Colors.grey : const Color(0xFF64748B),
+                        color: tok.textSecondary,
                         fontSize: 13,
                         fontWeight: FontWeight.bold,
                       ),
@@ -2029,7 +2073,7 @@ class _ChapterReaderScreenState extends State<ChapterReaderScreen> {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text('🎉 ${widget.resource.title} ${tr("completed")}!'),
-                                  backgroundColor: const Color(0xFF10B981),
+                                  backgroundColor: tok.success,
                                 ),
                               );
                               Navigator.pop(context);
@@ -2040,8 +2084,8 @@ class _ChapterReaderScreenState extends State<ChapterReaderScreen> {
                       ),
                       label: Text(_currentIndex < _lessons.length - 1 ? tr('next') : tr('done')),
                       style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFF38BDF8),
-                        foregroundColor: const Color(0xFF0F172A),
+                        backgroundColor: tok.primary,
+                        foregroundColor: tok.buttonText,
                       ),
                     ),
                   ],
@@ -2060,12 +2104,12 @@ class _ChapterReaderScreenState extends State<ChapterReaderScreen> {
 class _RichLessonReader extends StatelessWidget {
   final String content;
   final double fontSize;
-  final bool isDark;
+  final SemanticThemeTokens tok;
 
   const _RichLessonReader({
     required this.content,
     required this.fontSize,
-    required this.isDark,
+    required this.tok,
   });
 
   @override
@@ -2099,9 +2143,9 @@ class _RichLessonReader extends StatelessWidget {
           margin: const EdgeInsets.symmetric(vertical: 10),
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: const Color(0xFF0F172A),
+            color: tok.surfaceElevated,
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: const Color(0xFF334155)),
+            border: Border.all(color: tok.border),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -2111,7 +2155,7 @@ class _RichLessonReader extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 6),
                   child: Text(
                     lang.toUpperCase(),
-                    style: const TextStyle(fontSize: 10, color: Color(0xFF38BDF8), fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 10, color: tok.secondaryAccent, fontWeight: FontWeight.bold),
                   ),
                 ),
               SingleChildScrollView(
@@ -2121,7 +2165,7 @@ class _RichLessonReader extends StatelessWidget {
                   style: const TextStyle(
                     fontFamily: 'monospace',
                     fontSize: 13,
-                    color: Color(0xFF38BDF8),
+                    color: Color(0xFFF4EFE6),
                     height: 1.45,
                   ),
                 ),
@@ -2138,8 +2182,8 @@ class _RichLessonReader extends StatelessWidget {
           margin: const EdgeInsets.symmetric(vertical: 6),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
-            border: const Border(left: BorderSide(color: Color(0xFF38BDF8), width: 3)),
-            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+            border: Border(left: BorderSide(color: tok.primary, width: 3)),
+            color: tok.cardBackground,
             borderRadius: const BorderRadius.only(topRight: Radius.circular(8), bottomRight: Radius.circular(8)),
           ),
           child: Text(
@@ -2147,7 +2191,7 @@ class _RichLessonReader extends StatelessWidget {
             style: TextStyle(
               fontStyle: FontStyle.italic,
               fontSize: fontSize,
-              color: isDark ? Colors.white70 : const Color(0xFF334155),
+              color: tok.textSecondary,
             ),
           ),
         ));
@@ -2164,7 +2208,7 @@ class _RichLessonReader extends StatelessWidget {
             style: TextStyle(
               fontSize: fontSize + 6,
               fontWeight: FontWeight.bold,
-              color: const Color(0xFF38BDF8),
+              color: tok.primary,
             ),
           ),
         ));
@@ -2182,7 +2226,7 @@ class _RichLessonReader extends StatelessWidget {
                 width: 4,
                 height: fontSize + 2,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF38BDF8),
+                  color: tok.primary,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -2193,7 +2237,7 @@ class _RichLessonReader extends StatelessWidget {
                   style: TextStyle(
                     fontSize: fontSize + 2,
                     fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    color: tok.textPrimary,
                   ),
                 ),
               ),
@@ -2213,7 +2257,7 @@ class _RichLessonReader extends StatelessWidget {
             style: TextStyle(
               fontSize: fontSize,
               fontWeight: FontWeight.bold,
-              color: const Color(0xFF10B981),
+              color: tok.success,
             ),
           ),
         ));
@@ -2240,9 +2284,9 @@ class _RichLessonReader extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Padding(
-                padding: EdgeInsets.only(top: 6),
-                child: Icon(Icons.circle, size: 6, color: Color(0xFF38BDF8)),
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Icon(Icons.circle, size: 6, color: tok.primary),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -2251,7 +2295,7 @@ class _RichLessonReader extends StatelessWidget {
                   style: TextStyle(
                     fontSize: fontSize,
                     height: 1.55,
-                    color: isDark ? Colors.white.withValues(alpha: 0.9) : const Color(0xFF334155),
+                    color: tok.textPrimary,
                   ),
                 ),
               ),
@@ -2264,18 +2308,16 @@ class _RichLessonReader extends StatelessWidget {
 
       // Callout box / Common Mistake / Example
       if (line.startsWith('❌') || line.startsWith('✅') || line.startsWith('⚠️')) {
+        final isCheck = line.startsWith('✅');
+        final calloutColor = isCheck ? tok.success : tok.error;
         widgets.add(Container(
           margin: const EdgeInsets.symmetric(vertical: 6),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: line.startsWith('✅')
-                ? const Color(0xFF10B981).withValues(alpha: 0.12)
-                : const Color(0xFFEF4444).withValues(alpha: 0.12),
+            color: calloutColor.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: line.startsWith('✅')
-                  ? const Color(0xFF10B981).withValues(alpha: 0.4)
-                  : const Color(0xFFEF4444).withValues(alpha: 0.4),
+              color: calloutColor.withValues(alpha: 0.4),
             ),
           ),
           child: Text(
@@ -2284,7 +2326,7 @@ class _RichLessonReader extends StatelessWidget {
               fontSize: fontSize,
               height: 1.5,
               fontWeight: FontWeight.w500,
-              color: isDark ? Colors.white : const Color(0xFF0F172A),
+              color: tok.textPrimary,
             ),
           ),
         ));
@@ -2300,7 +2342,7 @@ class _RichLessonReader extends StatelessWidget {
           style: TextStyle(
             fontSize: fontSize,
             height: 1.65,
-            color: isDark ? Colors.white.withValues(alpha: 0.92) : const Color(0xFF1E293B),
+            color: tok.textPrimary,
           ),
         ),
       ));
@@ -2332,20 +2374,20 @@ class _RichLessonReader extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: tok.cardBackground,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFCBD5E1)),
+        border: Border.all(color: tok.border),
       ),
       clipBehavior: Clip.antiAlias,
       child: Table(
         border: TableBorder(
-          horizontalInside: BorderSide(color: isDark ? Colors.white10 : const Color(0xFFE2E8F0)),
+          horizontalInside: BorderSide(color: tok.border),
         ),
         children: [
           // Header Row
           TableRow(
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+              color: tok.chipBackground,
             ),
             children: headerCols
                 .map((h) => Padding(
@@ -2355,7 +2397,7 @@ class _RichLessonReader extends StatelessWidget {
                         style: TextStyle(
                           fontSize: fontSize - 1,
                           fontWeight: FontWeight.bold,
-                          color: const Color(0xFF38BDF8),
+                          color: tok.primary,
                         ),
                       ),
                     ))
@@ -2371,7 +2413,7 @@ class _RichLessonReader extends StatelessWidget {
                           cell,
                           style: TextStyle(
                             fontSize: fontSize - 1,
-                            color: isDark ? Colors.white70 : const Color(0xFF334155),
+                            color: tok.textPrimary,
                           ),
                         ),
                       ))
@@ -2387,22 +2429,22 @@ class _RichLessonReader extends StatelessWidget {
 // ──── Small Utility Badge ────
 class _Badge extends StatelessWidget {
   final String label;
-  final Color color;
+  final SemanticThemeTokens tok;
 
-  const _Badge({required this.label, required this.color});
+  const _Badge({required this.label, required this.tok});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.25),
+        color: tok.chipBackground,
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
+        border: Border.all(color: tok.border),
       ),
       child: Text(
         label,
-        style: TextStyle(fontSize: 10, color: color.computeLuminance() > 0.5 ? const Color(0xFF0F172A) : Colors.white),
+        style: TextStyle(fontSize: 10, color: tok.textSecondary, fontWeight: FontWeight.w500),
       ),
     );
   }

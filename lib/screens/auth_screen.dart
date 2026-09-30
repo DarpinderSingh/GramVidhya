@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import '../data/auth_service.dart';
-import '../data/store.dart';
 import '../core/i18n.dart';
+import '../core/theme.dart';
+import '../data/auth_service.dart';
+import 'model_manager_screen.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key, required this.auth});
@@ -24,7 +25,7 @@ class _AuthScreenState extends State<AuthScreen> {
   final _confirmPasswordController = TextEditingController();
   final _phoneController = TextEditingController();
   String _educationLevel = 'UG';
-  String _preferredLang = appLang.value;
+  final String _preferredLang = appLang.value;
 
   final _formKey = GlobalKey<FormState>();
 
@@ -39,6 +40,7 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   void _submit() async {
+    final tok = context.tokens;
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
@@ -61,10 +63,6 @@ class _AuthScreenState extends State<AuthScreen> {
         educationLevel: _educationLevel,
         preferredLang: _preferredLang,
       );
-
-      if (error == null) {
-        await setLanguage(_preferredLang);
-      }
     } else {
       error = await widget.auth.login(
         email: _emailController.text,
@@ -77,7 +75,7 @@ class _AuthScreenState extends State<AuthScreen> {
     if (error != null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error), backgroundColor: Colors.redAccent),
+          SnackBar(content: Text(error), backgroundColor: tok.error),
         );
       }
     } else {
@@ -85,36 +83,40 @@ class _AuthScreenState extends State<AuthScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(_isRegister ? tr('register_success') : tr('login_success')),
-            backgroundColor: const Color(0xFF10B981),
+            backgroundColor: tok.success,
           ),
         );
-        Navigator.of(context).pop();
+        setState(() {}); // Refresh view to show profile
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final tok = context.tokens;
     final isLoggedIn = widget.auth.isLoggedIn;
 
     return Scaffold(
+      backgroundColor: tok.backgroundPrimary,
       appBar: AppBar(
+        backgroundColor: tok.backgroundPrimary,
+        elevation: 0,
+        iconTheme: IconThemeData(color: tok.textPrimary),
         title: Text(
           isLoggedIn ? tr('profile') : (_isRegister ? tr('register') : tr('login')),
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold, color: tok.textPrimary),
         ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
-          child: isLoggedIn ? _buildProfileView(theme) : _buildAuthForm(theme),
+          child: isLoggedIn ? _buildProfileView(tok) : _buildAuthForm(tok),
         ),
       ),
     );
   }
 
-  Widget _buildProfileView(ThemeData theme) {
+  Widget _buildProfileView(SemanticThemeTokens tok) {
     final profile = widget.auth.profile;
     final name = (profile['name'] as String?) ?? 'Student';
     final email = (profile['email'] as String?) ?? '';
@@ -129,96 +131,110 @@ class _AuthScreenState extends State<AuthScreen> {
         Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0284C7), Color(0xFF0F172A)],
+            gradient: LinearGradient(
+              colors: [tok.primary, tok.secondaryAccent],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFF38BDF8).withValues(alpha: 0.3)),
+            boxShadow: [
+              BoxShadow(
+                color: tok.shadow,
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Column(
             children: [
               CircleAvatar(
                 radius: 40,
-                backgroundColor: const Color(0xFF38BDF8).withValues(alpha: 0.2),
+                backgroundColor: tok.buttonText.withValues(alpha: 0.25),
                 child: Text(
                   name.isNotEmpty ? name[0].toUpperCase() : 'G',
-                  style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: Color(0xFF38BDF8)),
+                  style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: tok.buttonText),
                 ),
               ),
               const SizedBox(height: 16),
               Text(
                 name,
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: tok.buttonText),
               ),
               const SizedBox(height: 4),
               Text(
                 email,
-                style: TextStyle(fontSize: 14, color: Colors.white.withValues(alpha: 0.7)),
+                style: TextStyle(fontSize: 14, color: tok.buttonText.withValues(alpha: 0.8)),
               ),
             ],
           ),
         ),
         const SizedBox(height: 24),
 
-        // Info Cards
+        // Account Details Card
         Card(
-          color: const Color(0xFF1E293B),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          color: tok.cardBackground,
+          elevation: 2,
+          shadowColor: tok.shadow,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: tok.border),
+          ),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(tr('profile'), style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                const Divider(height: 24),
-                _buildInfoRow(Icons.school, tr('education_level'), level),
-                const SizedBox(height: 12),
-                _buildInfoRow(Icons.language, tr('language'), langNames[lang] ?? lang),
-                if (phone.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  _buildInfoRow(Icons.phone, tr('phone'), phone),
-                ],
-                const SizedBox(height: 12),
-                _buildInfoRow(Icons.cloud_queue, tr('status'), '${Store.pending} ${tr('progress_sync').replaceAll('{n}', '')}'),
+                Text(
+                  tr('profile_details'),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: tok.textPrimary),
+                ),
+                const SizedBox(height: 16),
+                _buildProfileDetailRow(Icons.phone, tr('phone'), phone.isNotEmpty ? phone : 'Not provided', tok),
+                const Divider(),
+                _buildProfileDetailRow(Icons.school, tr('education_level'), level, tok),
+                const Divider(),
+                _buildProfileDetailRow(Icons.language, tr('language'), langNames[lang] ?? lang, tok),
               ],
             ),
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // AI Model Manager Entry
+        Card(
+          color: tok.cardBackground,
+          elevation: 2,
+          shadowColor: tok.shadow,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: tok.border),
+          ),
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: tok.primary.withValues(alpha: 0.15),
+              child: Icon(Icons.memory, color: tok.primary),
+            ),
+            title: Text('Offline AI Model Manager', style: TextStyle(fontWeight: FontWeight.bold, color: tok.textPrimary)),
+            subtitle: Text('Inspect or download on-device GGUF model', style: TextStyle(color: tok.textSecondary, fontSize: 12)),
+            trailing: Icon(Icons.chevron_right, color: tok.textSecondary),
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const ModelManagerScreen()));
+            },
           ),
         ),
         const SizedBox(height: 24),
 
         // Logout Button
-        OutlinedButton.icon(
+        ElevatedButton.icon(
           onPressed: () async {
-            final confirm = await showDialog<bool>(
-              context: context,
-              builder: (ctx) => AlertDialog(
-                backgroundColor: const Color(0xFF1E293B),
-                title: Text(tr('logout')),
-                content: Text(tr('logout_confirm')),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(ctx).pop(false),
-                    child: Text(tr('cancel')),
-                  ),
-                  TextButton(
-                    onPressed: () => Navigator.of(ctx).pop(true),
-                    child: Text(tr('logout'), style: const TextStyle(color: Colors.redAccent)),
-                  ),
-                ],
-              ),
-            );
-
-            if (confirm == true) {
-              await widget.auth.logout();
-              if (mounted) setState(() {});
-            }
+            await widget.auth.logout();
+            setState(() {});
           },
-          icon: const Icon(Icons.logout, color: Colors.redAccent),
-          label: Text(tr('logout'), style: const TextStyle(color: Colors.redAccent)),
-          style: OutlinedButton.styleFrom(
-            side: const BorderSide(color: Colors.redAccent),
+          icon: Icon(Icons.logout, color: tok.buttonText),
+          label: Text(tr('logout'), style: TextStyle(color: tok.buttonText)),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: tok.error,
+            foregroundColor: tok.buttonText,
             padding: const EdgeInsets.symmetric(vertical: 14),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
@@ -227,65 +243,58 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value) {
-    return Row(
-      children: [
-        Icon(icon, size: 20, color: const Color(0xFF38BDF8)),
-        const SizedBox(width: 12),
-        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 14)),
-        const Spacer(),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-      ],
+  Widget _buildProfileDetailRow(IconData icon, String label, String value, SemanticThemeTokens tok) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        children: [
+          Icon(icon, color: tok.accent, size: 20),
+          const SizedBox(width: 12),
+          Text(label, style: TextStyle(color: tok.textSecondary, fontSize: 14)),
+          const Spacer(),
+          Text(value, style: TextStyle(fontWeight: FontWeight.bold, color: tok.textPrimary, fontSize: 14)),
+        ],
+      ),
     );
   }
 
-  Widget _buildAuthForm(ThemeData theme) {
+  Widget _buildAuthForm(SemanticThemeTokens tok) {
     return Form(
       key: _formKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Header Logo / Icon
+          // Banner Icon
           Center(
             child: Container(
-              width: 72,
-              height: 72,
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFF38BDF8).withValues(alpha: 0.15),
+                color: tok.accent.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.school, size: 40, color: Color(0xFF38BDF8)),
+              child: Icon(Icons.school, size: 48, color: tok.accent),
             ),
           ),
           const SizedBox(height: 16),
-          Center(
-            child: Text(
-              _isRegister ? tr('register') : tr('login'),
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
-            ),
+          Text(
+            _isRegister ? tr('create_account') : tr('welcome_back'),
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: tok.textPrimary),
           ),
           const SizedBox(height: 8),
-          Center(
-            child: Text(
-              tr('welcome_sub'),
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.7)),
-            ),
+          Text(
+            _isRegister ? tr('register_sub') : tr('login_sub'),
+            textAlign: TextAlign.center,
+            style: TextStyle(color: tok.textSecondary, fontSize: 14),
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 24),
 
-          // Fields
           if (_isRegister) ...[
             TextFormField(
               controller: _nameController,
-              decoration: InputDecoration(
-                labelText: tr('name'),
-                prefixIcon: const Icon(Icons.person_outline),
-                filled: true,
-                fillColor: const Color(0xFF1E293B),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              validator: (v) => (v == null || v.trim().isEmpty) ? tr('field_required') : null,
+              style: TextStyle(color: tok.textPrimary),
+              decoration: _inputDecoration(tr('full_name'), Icons.person, tok),
+              validator: (v) => (v == null || v.trim().isEmpty) ? tr('enter_name') : null,
             ),
             const SizedBox(height: 16),
           ],
@@ -293,40 +302,23 @@ class _AuthScreenState extends State<AuthScreen> {
           TextFormField(
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
-            decoration: InputDecoration(
-              labelText: tr('email'),
-              prefixIcon: const Icon(Icons.email_outlined),
-              filled: true,
-              fillColor: const Color(0xFF1E293B),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            validator: (v) {
-              if (v == null || v.trim().isEmpty) return tr('field_required');
-              if (!v.contains('@')) return tr('invalid_email');
-              return null;
-            },
+            style: TextStyle(color: tok.textPrimary),
+            decoration: _inputDecoration(tr('email'), Icons.email, tok),
+            validator: (v) => (v == null || !v.contains('@')) ? tr('enter_valid_email') : null,
           ),
           const SizedBox(height: 16),
 
           TextFormField(
             controller: _passwordController,
             obscureText: _obscurePassword,
-            decoration: InputDecoration(
-              labelText: tr('password'),
-              prefixIcon: const Icon(Icons.lock_outline),
+            style: TextStyle(color: tok.textPrimary),
+            decoration: _inputDecoration(tr('password'), Icons.lock, tok).copyWith(
               suffixIcon: IconButton(
-                icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off, color: tok.textSecondary),
                 onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
               ),
-              filled: true,
-              fillColor: const Color(0xFF1E293B),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            validator: (v) {
-              if (v == null || v.isEmpty) return tr('field_required');
-              if (v.length < 6) return tr('password_too_short');
-              return null;
-            },
+            validator: (v) => (v == null || v.length < 6) ? tr('password_min_chars') : null,
           ),
           const SizedBox(height: 16),
 
@@ -334,117 +326,82 @@ class _AuthScreenState extends State<AuthScreen> {
             TextFormField(
               controller: _confirmPasswordController,
               obscureText: _obscureConfirm,
-              decoration: InputDecoration(
-                labelText: tr('confirm_password'),
-                prefixIcon: const Icon(Icons.lock_outline),
+              style: TextStyle(color: tok.textPrimary),
+              decoration: _inputDecoration(tr('confirm_password'), Icons.lock_outline, tok).copyWith(
                 suffixIcon: IconButton(
-                  icon: Icon(_obscureConfirm ? Icons.visibility_off : Icons.visibility),
+                  icon: Icon(_obscureConfirm ? Icons.visibility : Icons.visibility_off, color: tok.textSecondary),
                   onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
                 ),
-                filled: true,
-                fillColor: const Color(0xFF1E293B),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              validator: (v) {
-                if (v == null || v.isEmpty) return tr('field_required');
-                if (v != _passwordController.text) return tr('passwords_no_match');
-                return null;
-              },
+              validator: (v) => (v == null || v.isEmpty) ? tr('confirm_password_req') : null,
             ),
             const SizedBox(height: 16),
+
             TextFormField(
               controller: _phoneController,
               keyboardType: TextInputType.phone,
-              decoration: InputDecoration(
-                labelText: tr('phone'),
-                prefixIcon: const Icon(Icons.phone_outlined),
-                filled: true,
-                fillColor: const Color(0xFF1E293B),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
+              style: TextStyle(color: tok.textPrimary),
+              decoration: _inputDecoration(tr('phone_optional'), Icons.phone, tok),
             ),
             const SizedBox(height: 16),
+
             DropdownButtonFormField<String>(
               initialValue: _educationLevel,
-              decoration: InputDecoration(
-                labelText: tr('education_level'),
-                prefixIcon: const Icon(Icons.school_outlined),
-                filled: true,
-                fillColor: const Color(0xFF1E293B),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              dropdownColor: const Color(0xFF1E293B),
-              items: const [
-                DropdownMenuItem(value: 'School', child: Text('School (Class 1-10)')),
-                DropdownMenuItem(value: 'Secondary', child: Text('Secondary (11th-12th)')),
-                DropdownMenuItem(value: 'UG', child: Text('Undergraduate (College)')),
-                DropdownMenuItem(value: 'PG', child: Text('Postgraduate')),
+              dropdownColor: tok.cardBackground,
+              decoration: _inputDecoration(tr('education_level'), Icons.school_outlined, tok),
+              style: TextStyle(color: tok.textPrimary),
+              items: [
+                DropdownMenuItem(value: 'UG', child: Text(tr('undergraduate'))),
+                DropdownMenuItem(value: 'PG', child: Text(tr('postgraduate'))),
+                DropdownMenuItem(value: 'PhD', child: Text(tr('doctorate'))),
               ],
-              onChanged: (v) => setState(() => _educationLevel = v ?? 'UG'),
-            ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              initialValue: _preferredLang,
-              decoration: InputDecoration(
-                labelText: tr('preferred_lang'),
-                prefixIcon: const Icon(Icons.translate),
-                filled: true,
-                fillColor: const Color(0xFF1E293B),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              dropdownColor: const Color(0xFF1E293B),
-              items: langNames.entries
-                  .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
-                  .toList(),
-              onChanged: (v) => setState(() => _preferredLang = v ?? 'en'),
+              onChanged: (v) => setState(() => _educationLevel = v!),
             ),
             const SizedBox(height: 16),
           ],
 
-          const SizedBox(height: 8),
-
-          // Submit Button
+          const SizedBox(height: 12),
           ElevatedButton(
             onPressed: _isLoading ? null : _submit,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF38BDF8),
-              foregroundColor: const Color(0xFF0F172A),
-              padding: const EdgeInsets.symmetric(vertical: 14),
+              backgroundColor: tok.buttonPrimary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             child: _isLoading
-                ? const SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0F172A)),
-                  )
-                : Text(
-                    _isRegister ? tr('register') : tr('login'),
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
+                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                : Text(_isRegister ? tr('register') : tr('login'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ),
           const SizedBox(height: 16),
 
-          // Toggle Login / Register
           TextButton(
             onPressed: () => setState(() => _isRegister = !_isRegister),
             child: Text(
-              _isRegister ? tr('already_have_account') : tr('no_account'),
-              style: const TextStyle(color: Color(0xFF38BDF8)),
+              _isRegister ? tr('already_have_account') : tr('dont_have_account'),
+              style: TextStyle(color: tok.accent, fontWeight: FontWeight.bold),
             ),
-          ),
-
-          // Continue Offline
-          OutlinedButton(
-            onPressed: () => Navigator.of(context).pop(),
-            style: OutlinedButton.styleFrom(
-              side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: Text(tr('continue_offline'), style: const TextStyle(color: Colors.white70)),
           ),
         ],
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration(String label, IconData icon, SemanticThemeTokens tok) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: TextStyle(color: tok.textSecondary),
+      prefixIcon: Icon(icon, color: tok.accent),
+      filled: true,
+      fillColor: tok.cardBackground,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: tok.border),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: tok.accent, width: 2),
       ),
     );
   }
