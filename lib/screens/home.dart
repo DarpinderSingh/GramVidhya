@@ -57,14 +57,16 @@ class _HomeState extends State<HomeScreen> {
             pinned: true,
             backgroundColor: tok.primary,
             foregroundColor: tok.buttonText,
-            flexibleSpace: FlexibleSpaceBar(
-              title: Text(
-                tr('app_title'),
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: tok.buttonText,
-                ),
+            title: Text(
+              tr('app_title'),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: tok.buttonText,
+                fontSize: 16,
               ),
+            ),
+            flexibleSpace: FlexibleSpaceBar(
+              collapseMode: CollapseMode.parallax,
               background: Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
